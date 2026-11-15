@@ -161,53 +161,56 @@ select.input-field option { background-color: #000; color: #fff; }
 .brand-sub { font-family:'Pirata One'; font-weight:500; font-size:.85rem; letter-spacing:.3em; color: var(--secondary); text-transform:uppercase; }
 .brand-tagline { font-family:'Outfit'; font-style:italic; font-size:.85rem; color: var(--primary); margin-top:6px; }
 
-/* ---------- LAYOUT ---------- */
-#app { display: none; width: 100%; height: 100vh; }
+/* ---------- LAYOUT (top navigation shell) ---------- */
+#app { display: none; width: 100%; height: 100vh; flex-direction: column; }
 #app.visible { display: flex; animation: appEnter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
 @keyframes appEnter { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-.sidebar {
-    width: var(--sidebar-width); height: 100%; padding: 36px 30px;
-    display: flex; flex-direction: column;
-    background: rgba(13, 12, 11, 0.65);
-    border-right: 1px solid rgba(201,162,39,0.15);
-    backdrop-filter: blur(10px); z-index: 100;
+.topbar {
+    width: 100%; flex: none;
+    padding: 14px max(24px, env(safe-area-inset-right,0px)) 14px max(24px, env(safe-area-inset-left,0px));
+    display: flex; align-items: center; gap: 28px;
+    background: rgba(13, 12, 11, 0.75);
+    border-bottom: 1px solid rgba(201,162,39,0.15);
+    backdrop-filter: blur(10px); z-index: 200;
     position: relative; overflow: hidden;
 }
-.sidebar::after {
+.topbar::after {
     content: "\f714"; font-family: "Font Awesome 6 Free"; font-weight: 900;
-    position: absolute; bottom: -40px; right: -30px; font-size: 220px;
-    color: var(--secondary); opacity: .05; transform: rotate(-12deg); pointer-events: none;
+    position: absolute; top: -55px; right: 220px; font-size: 150px;
+    color: var(--secondary); opacity: .04; transform: rotate(10deg); pointer-events: none;
 }
-.brand-area { display: flex; align-items: center; gap: 14px; margin-bottom: 50px; }
-.brand-icon { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; background: var(--secondary); flex: none; }
+.brand-area { display: flex; align-items: center; gap: 12px; flex: none; }
+.brand-icon { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; background: var(--secondary); flex: none; }
 .brand-icon img { width: 100%; height: 100%; object-fit: cover; }
-.brand-area .bname { font-family: 'Pirata One'; font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.1; }
-.brand-area .bname small { display:block; font-weight: 400; font-size: .62rem; letter-spacing: .2em; color: var(--text-muted); margin-top: 3px; }
+.brand-area .bname { font-family: 'Pirata One'; font-size: 1.1rem; font-weight: 700; color: #fff; line-height: 1.1; }
+.brand-area .bname small { display:block; font-weight: 400; font-size: .58rem; letter-spacing: .18em; color: var(--text-muted); margin-top: 2px; }
 
-.nav-menu { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.nav-menu { display: flex; flex-direction: row; gap: 4px; flex: 1; }
 .nav-item {
-    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
-    border-radius: 16px; color: var(--text-muted); font-weight: 500;
-    cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+    border-radius: 10px; color: var(--text-muted); font-weight: 500; font-size: .92rem;
+    cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; white-space: nowrap;
 }
-.nav-item:hover { color: #fff; background: rgba(201,162,39,0.08); transform: translateX(5px); }
-.nav-item.active { background: linear-gradient(90deg, rgba(201, 162, 39, 0.18), transparent); color: #f0d998; font-weight: 600; }
+.nav-item:hover { color: #fff; background: rgba(201,162,39,0.08); transform: translateY(-2px); }
+.nav-item.active { background: rgba(201, 162, 39, 0.14); color: #f0d998; font-weight: 600; }
 .nav-item.active::before {
-    content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 4px;
-    background: var(--primary); border-radius: 0 4px 4px 0; box-shadow: 0 0 15px var(--primary);
+    content: ''; position: absolute; left: 50%; bottom: 0; width: 60%; height: 3px;
+    background: var(--primary); border-radius: 3px 3px 0 0; box-shadow: 0 0 10px var(--primary);
+    transform: translateX(-50%);
 }
-.nav-item i { width: 24px; text-align: center; font-size: 1.1rem; }
+.nav-item i { width: 18px; text-align: center; font-size: 1rem; }
 
-.main-content { flex: 1; padding: 40px 50px; overflow-y: auto; position: relative; }
+.topbar-right { display: flex; align-items: center; gap: 0; flex: none; }
+.topbar-pill { display: flex; flex-direction: column; line-height: 1.2; padding: 2px 18px; border-left: 1px solid rgba(201,162,39,.15); }
+.topbar-pill .tp-label { font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+.topbar-pill .tp-value { font-family: 'Space Grotesk'; font-weight: 700; font-size: .95rem; color: #fff; }
+.btn-tools { background: none; border: none; color: var(--secondary); font-size: 1.1rem; cursor: pointer; padding: 0 18px; border-left: 1px solid rgba(201,162,39,.15); height: 36px; display:flex; align-items:center; }
+.btn-tools:hover { color: #fff; }
+.btn-logout-top { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 0 0 0 18px; border-left: 1px solid rgba(201,162,39,.15); height: 36px; display:flex; align-items:center; }
+.btn-logout-top:hover { color: #e86a68; }
 
-.stats-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-bottom: 40px; }
-.stat-card { padding: 30px; height: 180px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
-.stat-card:hover { transform: translateY(-5px); border-color: rgba(216,197,163,0.25); }
-.stat-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; z-index: 2; }
-.stat-value { font-family: 'Space Grotesk'; font-size: 3rem; color: #fff; font-weight: 700; z-index: 2; margin-top: 5px; }
-.stat-icon-bg { position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.035; transform: rotate(-15deg); transition: 0.3s; color: var(--secondary); }
-.stat-card:hover .stat-icon-bg { opacity: 0.09; transform: rotate(0deg) scale(1.1); }
+.main-content { flex: 1; padding: 36px 50px; overflow-y: auto; position: relative; }
 
 .tab-content { display: none; opacity: 0; transform: translateY(20px); transition: 0.4s ease; }
 .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
@@ -248,7 +251,7 @@ select.input-field option { background-color: #000; color: #fff; }
 .btn-add-row:hover { border-color: var(--primary); color: #e8b4b4; background: rgba(156,42,48,0.06); }
 
 /* ---------- FACTURE / TICKET DE CAISSE ---------- */
-.invoice-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: start; }
+.invoice-layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; align-items: start; }
 @media (max-width: 1000px) { .invoice-layout { grid-template-columns: 1fr; } }
 .catalog-toolbar { position: sticky; top: -1px; z-index: 5; background: var(--panel-bg); padding: 4px 0 14px; margin-bottom: 10px; }
 .catalog-toolbar .search-group { position: relative; margin-bottom: 12px; }
@@ -324,14 +327,6 @@ select.input-field option { background-color: #000; color: #fff; }
 .modal-content { width: 450px; padding: 40px; transform: scale(0.9) translateY(20px); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .modal-overlay.open .modal-content { transform: scale(1) translateY(0); }
 
-.btn-widget-float {
-    position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%;
-    background: var(--primary); color: #fff; border: none; font-size: 1.5rem;
-    box-shadow: 0 0 30px var(--primary-glow); z-index: 4000; cursor: pointer;
-    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center;
-}
-.btn-widget-float:hover { transform: scale(1.1) rotate(90deg); }
-
 .widget-drawer {
     position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
     background: rgba(17, 15, 14, 0.97); backdrop-filter: blur(20px);
@@ -355,19 +350,20 @@ select.input-field option { background-color: #000; color: #fff; }
 
 @media (max-width: 900px) {
     body { overflow: auto; }
-    .sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: auto; flex-direction: row; padding: 10px; border-right: none; border-top: 1px solid rgba(216,197,163,0.1); background: #0f0e0d; justify-content: space-around; z-index: 5000; }
-    .brand-area, .nav-item span, .nav-item:last-child { display: none; }
-    .nav-item { padding: 12px; margin: 0; flex-direction: column; gap: 5px; border-radius: 12px; }
-    .nav-item i { font-size: 1.4rem; }
+    .topbar { position: fixed; bottom: 0; left: 0; top: auto; width: 100%; height: auto; flex-wrap: wrap; padding: 8px; border-top: 1px solid rgba(216,197,163,0.1); border-bottom: none; background: #0f0e0d; justify-content: space-around; z-index: 5000; gap: 2px; }
+    .brand-area, .nav-item span, .topbar-pill, .btn-logout-top span { display: none; }
+    .nav-menu { flex-wrap: wrap; justify-content: center; gap: 2px; order: 1; width: 100%; }
+    .nav-item { padding: 10px 12px; margin: 0; flex-direction: column; gap: 4px; border-radius: 12px; }
+    .nav-item i { font-size: 1.2rem; }
     .nav-item.active { background: transparent; color: var(--primary); }
-    .nav-item.active::before { bottom: 0; top: auto; width: 20px; height: 3px; left: 50%; transform: translateX(-50%); border-radius: 3px; }
-    .main-content { padding: 20px; padding-bottom: 100px; }
-    .stats-container { grid-template-columns: 1fr; }
+    .nav-item.active::before { bottom: auto; top: 0; width: 20px; height: 3px; left: 50%; transform: translateX(-50%); border-radius: 0 0 3px 3px; }
+    .topbar-right { gap: 0; }
+    .btn-tools, .btn-logout-top { padding: 0 10px; border-left: none; }
+    .main-content { padding: 20px; padding-bottom: 90px; }
     .login-container { width: 100%; padding: 20px; }
     .big-counter { font-size: 4rem; width: 150px; }
     .chart-container { height: 250px; }
     .widget-drawer { width: 100%; right: -100%; }
-    .btn-widget-float { bottom: 90px; right: 20px; }
     .order-drawer { width: 100%; right: -100%; }
 }
 </style>
@@ -402,7 +398,7 @@ select.input-field option { background-color: #000; color: #fff; }
 </div>
 
 <div id="app">
-    <nav class="sidebar">
+    <header class="topbar">
         <div class="brand-area">
             <div class="brand-icon"><img src="riverside-badge.png" alt=""></div>
             <div class="bname">RIVERSIDE<small>SERENITY LOUNGE</small></div>
@@ -417,12 +413,19 @@ select.input-field option { background-color: #000; color: #fff; }
             <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-book"></i> <span>Historique</span></div>
         </div>
 
-        <div class="nav-item" onclick="handleLogout()" style="margin-top:auto; color:var(--danger); border:1px solid rgba(176,64,63,0.25);">
-            <i class="fas fa-skull-crossbones"></i> <span>Déconnexion</span>
+        <div class="topbar-right">
+            <div class="topbar-pill">
+                <span class="tp-label">Opérateur</span>
+                <span class="tp-value" id="opName">-</span>
+            </div>
+            <div class="topbar-pill">
+                <span class="tp-label">Date</span>
+                <span class="tp-value" id="sysDate">--/--</span>
+            </div>
+            <button onclick="toggleWidgets()" class="btn-tools" title="Outils rapides"><i class="fas fa-compass"></i></button>
+            <button onclick="handleLogout()" class="btn-logout-top" title="Déconnexion"><i class="fas fa-skull-crossbones"></i> <span>Déconnexion</span></button>
         </div>
-    </nav>
-
-    <button onclick="toggleWidgets()" class="btn-widget-float"><i class="fas fa-compass"></i></button>
+    </header>
 
     <div id="widgetPanel" class="widget-drawer">
         <div class="widget-header">
@@ -453,23 +456,14 @@ select.input-field option { background-color: #000; color: #fff; }
     </div>
 
     <main class="main-content">
-        <div class="stats-container">
-            <div class="glass-panel stat-card">
-                <div class="stat-title">Opérateur Connecté</div>
-                <div class="stat-value" id="opName" style="font-size:2rem;">-</div>
-                <div style="margin-top:auto; font-size:0.9rem; color:var(--text-muted);"><i class="fas fa-circle" style="color:var(--success); font-size:0.6rem; margin-right:5px;"></i> En ligne</div>
-                <i class="fas fa-id-badge stat-icon-bg"></i>
-            </div>
-            <div class="glass-panel stat-card">
-                <div class="stat-title">Date Système</div>
-                <div class="stat-value" id="sysDate" style="font-size:2rem;">--/--</div>
-                <div style="margin-top:auto; font-size:0.9rem; color:var(--text-muted);">RIVERSIDE Serenity Lounge</div>
-                <i class="fas fa-calendar-alt stat-icon-bg"></i>
-            </div>
-        </div>
-
         <div id="ordersTab" class="tab-content active">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:30px;">
+                <div class="glass-panel" style="padding:30px; display:flex; flex-direction:column;">
+                    <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Commandes Récentes</h3>
+                    <div style="overflow-y:auto; flex:1; max-height:500px;">
+                        <table class="modern-table"><tbody id="purchaseList"></tbody></table>
+                    </div>
+                </div>
                 <div class="glass-panel" style="padding:40px;">
                     <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-scroll"></i> Commande Reçue</h2>
                     <p style="color:var(--text-muted); margin-bottom:30px;">Déclarer une commande reçue d'un fournisseur.</p>
@@ -490,28 +484,11 @@ select.input-field option { background-color: #000; color: #fff; }
 
                     <button class="btn-action" onclick="submitPurchase()">Enregistrer la commande</button>
                 </div>
-                <div class="glass-panel" style="padding:30px; display:flex; flex-direction:column;">
-                    <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Commandes Récentes</h3>
-                    <div style="overflow-y:auto; flex:1; max-height:500px;">
-                        <table class="modern-table"><tbody id="purchaseList"></tbody></table>
-                    </div>
-                </div>
             </div>
         </div>
 
         <div id="invoiceTab" class="tab-content">
             <div class="invoice-layout">
-                <div class="glass-panel" style="padding:30px; max-height:80vh; overflow-y:auto;">
-                    <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-martini-glass-citrus"></i> Carte Riverside</h2>
-                    <div class="catalog-toolbar">
-                        <div class="search-group">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="catalogSearch" class="input-field" placeholder="Chercher un article..." oninput="filterCatalog()">
-                        </div>
-                        <div class="catalog-chips" id="catalogChips"></div>
-                    </div>
-                    <div id="menuCatalog"></div>
-                </div>
                 <div class="glass-panel ticket-panel">
                     <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-coins"></i> Ticket de Caisse</h2>
                     <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Articles commandés par le client.</p>
@@ -522,6 +499,17 @@ select.input-field option { background-color: #000; color: #fff; }
                     </div>
                     <button class="btn-action" onclick="encaisser()" style="margin-top:16px;"><i class="fas fa-cash-register"></i> Encaisser</button>
                     <button class="btn-circle" onclick="clearTicket()" style="width:100%; border-radius:14px; margin-top:10px; font-size:0.9rem;"><i class="fas fa-trash" style="margin-right:8px;"></i>Vider le ticket</button>
+                </div>
+                <div class="glass-panel" style="padding:30px; max-height:80vh; overflow-y:auto;">
+                    <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-martini-glass-citrus"></i> Carte Riverside</h2>
+                    <div class="catalog-toolbar">
+                        <div class="search-group">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="catalogSearch" class="input-field" placeholder="Chercher un article..." oninput="filterCatalog()">
+                        </div>
+                        <div class="catalog-chips" id="catalogChips"></div>
+                    </div>
+                    <div id="menuCatalog"></div>
                 </div>
             </div>
         </div>
@@ -549,6 +537,12 @@ select.input-field option { background-color: #000; color: #fff; }
 
         <div id="fuelTab" class="tab-content">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:30px;">
+                <div class="glass-panel" style="padding:30px; display:flex; flex-direction:column;">
+                    <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Historique Récent</h3>
+                    <div style="overflow-y:auto; flex:1; max-height:500px;">
+                        <table class="modern-table"><tbody id="fuelList"></tbody></table>
+                    </div>
+                </div>
                 <div class="glass-panel" style="padding:40px;">
                     <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-receipt"></i> Note de Frais</h2>
                     <p style="color:var(--text-muted); margin-bottom:30px;">Soumettre une demande de remboursement carburant.</p>
@@ -568,12 +562,6 @@ select.input-field option { background-color: #000; color: #fff; }
                         <input type="file" id="fuelPhoto" accept="image/*" hidden onchange="handleFileSelect(this)">
                     </label>
                     <button class="btn-action" onclick="declareFuel()" style="margin-top:30px;">Envoyer la demande</button>
-                </div>
-                <div class="glass-panel" style="padding:30px; display:flex; flex-direction:column;">
-                    <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Historique Récent</h3>
-                    <div style="overflow-y:auto; flex:1; max-height:500px;">
-                        <table class="modern-table"><tbody id="fuelList"></tbody></table>
-                    </div>
                 </div>
             </div>
         </div>
