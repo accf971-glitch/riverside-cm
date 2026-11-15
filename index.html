@@ -250,7 +250,31 @@ select.input-field option { background-color: #000; color: #fff; }
 /* ---------- FACTURE / TICKET DE CAISSE ---------- */
 .invoice-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: start; }
 @media (max-width: 1000px) { .invoice-layout { grid-template-columns: 1fr; } }
-.menu-category { margin-bottom: 28px; }
+.catalog-toolbar { position: sticky; top: -1px; z-index: 5; background: var(--panel-bg); padding: 4px 0 14px; margin-bottom: 10px; }
+.catalog-toolbar .search-group { position: relative; margin-bottom: 12px; }
+.catalog-toolbar .search-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+.catalog-toolbar .search-group input { padding-left: 45px; }
+.catalog-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cat-chip {
+    padding: 7px 14px; border-radius: 50px; cursor: pointer; transition: 0.2s;
+    background: rgba(201,162,39,0.06); border: 1px solid rgba(201,162,39,0.15);
+    color: var(--text-muted); font-size: 0.8rem; font-weight: 600;
+}
+.cat-chip:hover, .cat-chip.active { background: rgba(201,162,39,0.2); color: #f0d998; border-color: var(--secondary); }
+.qty-stepper { display: flex; align-items: center; gap: 6px; flex: none; }
+.qty-stepper button {
+    width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(201,162,39,0.2);
+    background: rgba(201,162,39,0.08); color: var(--secondary); cursor: pointer; font-weight: 700;
+}
+.qty-stepper button:hover { background: var(--primary); color: #fff; }
+.qty-stepper span { min-width: 18px; text-align: center; font-family:'Space Grotesk'; font-weight: 700; color: #fff; }
+.stock-quick { display: flex; flex-direction: column; gap: 4px; margin-left: auto; }
+.stock-quick button {
+    width: 24px; height: 24px; border-radius: 6px; border: 1px solid rgba(201,162,39,0.2);
+    background: rgba(201,162,39,0.08); color: var(--secondary); cursor: pointer; font-size: 0.75rem; font-weight: 700; line-height: 1;
+}
+.stock-quick button:hover { background: var(--primary); color: #fff; }
+.menu-category { margin-bottom: 28px; scroll-margin-top: 10px; }
 .menu-category:last-child { margin-bottom: 0; }
 .menu-category h3 { font-family: 'Pirata One'; font-size: 1.1rem; color: var(--secondary); margin-bottom: 4px; border-bottom: 1px solid rgba(216,197,163,0.1); padding-bottom: 10px; }
 .menu-item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 4px; border-bottom: 1px dashed rgba(216,197,163,0.08); }
@@ -479,6 +503,13 @@ select.input-field option { background-color: #000; color: #fff; }
             <div class="invoice-layout">
                 <div class="glass-panel" style="padding:30px; max-height:80vh; overflow-y:auto;">
                     <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-martini-glass-citrus"></i> Carte Riverside</h2>
+                    <div class="catalog-toolbar">
+                        <div class="search-group">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="catalogSearch" class="input-field" placeholder="Chercher un article..." oninput="filterCatalog()">
+                        </div>
+                        <div class="catalog-chips" id="catalogChips"></div>
+                    </div>
                     <div id="menuCatalog"></div>
                 </div>
                 <div class="glass-panel ticket-panel">
@@ -713,12 +744,15 @@ function articleRowHTML() {
     return `
         <div class="purchase-row">
             <select class="input-field article-name">${options}</select>
-            <input type="number" class="input-field article-qty" placeholder="Qté" min="0">
+            <input type="number" class="input-field article-qty" placeholder="Qté" min="0" onkeydown="if(event.key==='Enter'){event.preventDefault(); addArticleRow();}">
             <button type="button" class="btn-remove-row" onclick="this.closest('.purchase-row').remove()"><i class="fas fa-times"></i></button>
         </div>`;
 }
 function addArticleRow() {
-    document.getElementById('purchaseRows').insertAdjacentHTML('beforeend', articleRowHTML());
+    const rows = document.getElementById('purchaseRows');
+    rows.insertAdjacentHTML('beforeend', articleRowHTML());
+    const last = rows.lastElementChild.querySelector('.article-name');
+    if (last) last.focus();
 }
 function submitPurchase() {
     const company = document.getElementById('purchaseCompany').value.trim();
@@ -814,10 +848,12 @@ const MENU_CATALOG = [
 
 let ticket = [];
 
+function slugify(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-'); }
+
 function renderMenuCatalog() {
     const container = document.getElementById('menuCatalog');
     container.innerHTML = MENU_CATALOG.map(cat => `
-        <div class="menu-category">
+        <div class="menu-category" id="cat-${slugify(cat.category)}" data-cat="${slugify(cat.category)}">
             <h3>${cat.category}</h3>
             ${cat.items.map(it => {
                 const sub = it.sub ? `<small>${it.sub}</small>` : '';
@@ -831,7 +867,7 @@ function renderMenuCatalog() {
                 } else {
                     actions = `<button type="button" class="btn-add-item" onclick="addToTicket(this, '${esc(it.name)}', ${it.price})">+ Ajouter ${it.price}$</button>`;
                 }
-                return `<div class="menu-item-row">
+                return `<div class="menu-item-row" data-name="${esc(it.name.toLowerCase())}">
                     <div class="menu-item-name">${it.name}${sub}</div>
                     <div class="menu-item-actions">
                         <input type="number" class="input-field qty-input" value="1" min="1">
@@ -840,6 +876,28 @@ function renderMenuCatalog() {
                 </div>`;
             }).join('')}
         </div>`).join('');
+
+    document.getElementById('catalogChips').innerHTML = MENU_CATALOG.map((cat, i) => `
+        <div class="cat-chip${i === 0 ? ' active' : ''}" data-cat="${slugify(cat.category)}" onclick="jumpToCategory('${slugify(cat.category)}', this)">${cat.category}</div>
+    `).join('');
+}
+function jumpToCategory(slug, chip) {
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    const el = document.getElementById('cat-' + slug);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function filterCatalog() {
+    const term = document.getElementById('catalogSearch').value.trim().toLowerCase();
+    document.querySelectorAll('.menu-category').forEach(catEl => {
+        let anyVisible = false;
+        catEl.querySelectorAll('.menu-item-row').forEach(row => {
+            const match = !term || row.dataset.name.includes(term);
+            row.style.display = match ? 'flex' : 'none';
+            if (match) anyVisible = true;
+        });
+        catEl.style.display = anyVisible ? 'block' : 'none';
+    });
 }
 function esc(s) { return String(s).replace(/'/g, "\\'"); }
 
@@ -872,11 +930,16 @@ function renderTicket() {
             <div class="ticket-line">
                 <div>
                     <div class="tl-name">${l.label}</div>
-                    <div class="tl-sub">${l.qty} x ${formatMoney(l.price)}</div>
+                    <div class="tl-sub">${formatMoney(l.price)} / unité</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="qty-stepper">
+                        <button type="button" onclick="changeTicketQty(${idx}, -1)">−</button>
+                        <span>${l.qty}</span>
+                        <button type="button" onclick="changeTicketQty(${idx}, 1)">+</button>
+                    </div>
                     <div class="tl-amount">${formatMoney(l.qty * l.price)}</div>
-                    <button class="tl-remove" onclick="removeTicketLine(${idx})"><i class="fas fa-times"></i></button>
+                    <button class="tl-remove" onclick="removeTicketLine(${idx})" title="Retirer"><i class="fas fa-times"></i></button>
                 </div>
             </div>`).join('');
     }
@@ -980,8 +1043,17 @@ function renderStockList() {
         <div class="stock-card" style="border-color:${borderColor}">
             <img src="${ing.img}" class="stock-img" loading="lazy">
             <div class="stock-info"><h4>${ing.name}</h4><span style="color:${statusColor}">${qty}</span></div>
+            <div class="stock-quick">
+                <button type="button" onclick="adjustStock('${esc(ing.name)}', 1)" title="+1">+</button>
+                <button type="button" onclick="adjustStock('${esc(ing.name)}', -1)" title="-1">−</button>
+            </div>
         </div>`;
     }).join('');
+}
+function adjustStock(name, delta) {
+    state.stocks[name] = Math.max(0, (state.stocks[name] || 0) + delta);
+    saveJSON('rvs_stocks', state.stocks);
+    renderStockList();
 }
 function openStockModal() { document.getElementById('modalStock').classList.add('open'); document.getElementById('addQty').value = 0; }
 function closeStockModal() { document.getElementById('modalStock').classList.remove('open'); }
