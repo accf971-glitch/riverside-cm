@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
@@ -15,26 +15,26 @@
    VARIABLES & THEME - RIVERSIDE SERENITY LOUNGE
    ========================================= */
 :root {
-    --primary: #9c2a30;
-    --primary-glow: rgba(156, 42, 48, 0.45);
-    --primary-dark: #781F24;
+    --primary: #8a1f1f;
+    --primary-glow: rgba(138, 31, 31, 0.5);
+    --primary-dark: #5e1414;
 
-    --secondary: #D8C5A3;
+    --secondary: #c9a227;
 
     --accent: #c9922f;
     --info: #5b7a93;
     --success: #6f8f5a;
     --danger: #b0403f;
 
-    --dark-bg: #171717;
-    --panel-bg: #1d1b19;
+    --dark-bg: #130d08;
+    --panel-bg: #211609;
 
     --text-main: #f1e6d2;
     --text-muted: #a79c8a;
 
-    --glass-bg: rgba(29, 27, 25, 0.78);
-    --glass-border: 1px solid rgba(216, 197, 163, 0.12);
-    --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    --glass-bg: rgba(26, 18, 10, 0.8);
+    --glass-border: 1px solid rgba(201, 162, 39, 0.18);
+    --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
     --glass-blur: blur(20px);
 
     --sidebar-width: 280px;
@@ -53,16 +53,16 @@ body {
     height: 100vh;
     overflow: hidden;
     background:
-        radial-gradient(circle at 15% 50%, rgba(156, 42, 48, 0.1), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(216, 197, 163, 0.06), transparent 25%),
-        linear-gradient(180deg, #171717 0%, #1d1b19 100%);
+        radial-gradient(circle at 15% 50%, rgba(138, 31, 31, 0.12), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(201, 162, 39, 0.07), transparent 25%),
+        linear-gradient(180deg, #130d08 0%, #211609 100%);
     background-size: cover;
 }
 
 body::after {
     content: "";
     position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.035'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
     pointer-events: none; z-index: -1;
 }
 
@@ -75,8 +75,15 @@ body::after {
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
     border: var(--glass-border); box-shadow: var(--glass-shadow);
-    border-radius: 24px;
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-panel::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+    background: repeating-linear-gradient(135deg, var(--secondary) 0 8px, var(--primary-dark) 8px 16px);
+    opacity: .55;
 }
 
 .btn-action {
@@ -150,8 +157,8 @@ select.input-field option { background-color: #000; color: #fff; }
 }
 .login-logo img { width: 100%; height: 100%; object-fit: cover; }
 @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-.brand-title { font-family:'Cinzel'; font-weight:700; font-size:2.1rem; letter-spacing:.06em; margin-bottom:2px; }
-.brand-sub { font-family:'Cinzel'; font-weight:500; font-size:.85rem; letter-spacing:.3em; color: var(--secondary); text-transform:uppercase; }
+.brand-title { font-family:'Pirata One'; font-weight:700; font-size:2.1rem; letter-spacing:.06em; margin-bottom:2px; }
+.brand-sub { font-family:'Pirata One'; font-weight:500; font-size:.85rem; letter-spacing:.3em; color: var(--secondary); text-transform:uppercase; }
 .brand-tagline { font-family:'Outfit'; font-style:italic; font-size:.85rem; color: var(--primary); margin-top:6px; }
 
 /* ---------- LAYOUT ---------- */
@@ -163,13 +170,19 @@ select.input-field option { background-color: #000; color: #fff; }
     width: var(--sidebar-width); height: 100%; padding: 36px 30px;
     display: flex; flex-direction: column;
     background: rgba(13, 12, 11, 0.65);
-    border-right: 1px solid rgba(216,197,163,0.08);
+    border-right: 1px solid rgba(201,162,39,0.15);
     backdrop-filter: blur(10px); z-index: 100;
+    position: relative; overflow: hidden;
+}
+.sidebar::after {
+    content: "\f714"; font-family: "Font Awesome 6 Free"; font-weight: 900;
+    position: absolute; bottom: -40px; right: -30px; font-size: 220px;
+    color: var(--secondary); opacity: .05; transform: rotate(-12deg); pointer-events: none;
 }
 .brand-area { display: flex; align-items: center; gap: 14px; margin-bottom: 50px; }
 .brand-icon { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; background: var(--secondary); flex: none; }
 .brand-icon img { width: 100%; height: 100%; object-fit: cover; }
-.brand-area .bname { font-family: 'Cinzel'; font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.1; }
+.brand-area .bname { font-family: 'Pirata One'; font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.1; }
 .brand-area .bname small { display:block; font-weight: 400; font-size: .62rem; letter-spacing: .2em; color: var(--text-muted); margin-top: 3px; }
 
 .nav-menu { display: flex; flex-direction: column; gap: 10px; flex: 1; }
@@ -178,8 +191,8 @@ select.input-field option { background-color: #000; color: #fff; }
     border-radius: 16px; color: var(--text-muted); font-weight: 500;
     cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;
 }
-.nav-item:hover { color: #fff; background: rgba(216,197,163,0.05); transform: translateX(5px); }
-.nav-item.active { background: linear-gradient(90deg, rgba(156, 42, 48, 0.2), transparent); color: #e8b4b4; font-weight: 600; }
+.nav-item:hover { color: #fff; background: rgba(201,162,39,0.08); transform: translateX(5px); }
+.nav-item.active { background: linear-gradient(90deg, rgba(201, 162, 39, 0.18), transparent); color: #f0d998; font-weight: 600; }
 .nav-item.active::before {
     content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 4px;
     background: var(--primary); border-radius: 0 4px 4px 0; box-shadow: 0 0 15px var(--primary);
@@ -239,7 +252,7 @@ select.input-field option { background-color: #000; color: #fff; }
 @media (max-width: 1000px) { .invoice-layout { grid-template-columns: 1fr; } }
 .menu-category { margin-bottom: 28px; }
 .menu-category:last-child { margin-bottom: 0; }
-.menu-category h3 { font-family: 'Cinzel'; font-size: 1.1rem; color: var(--secondary); margin-bottom: 4px; border-bottom: 1px solid rgba(216,197,163,0.1); padding-bottom: 10px; }
+.menu-category h3 { font-family: 'Pirata One'; font-size: 1.1rem; color: var(--secondary); margin-bottom: 4px; border-bottom: 1px solid rgba(216,197,163,0.1); padding-bottom: 10px; }
 .menu-item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 4px; border-bottom: 1px dashed rgba(216,197,163,0.08); }
 .menu-item-row:last-child { border-bottom: none; }
 .menu-item-name { font-weight: 600; color: #fff; font-size: 0.92rem; }
@@ -260,12 +273,12 @@ select.input-field option { background-color: #000; color: #fff; }
 .ticket-line .tl-amount { font-family:'Space Grotesk'; font-weight:700; color: var(--secondary); white-space: nowrap; }
 .ticket-line .tl-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.9rem; padding: 4px; }
 .ticket-empty { text-align: center; color: var(--text-muted); padding: 30px 0; font-size: 0.9rem; }
-.ticket-total { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 2px solid rgba(216,197,163,0.15); font-family:'Cinzel'; font-size: 1.2rem; }
+.ticket-total { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 2px solid rgba(216,197,163,0.15); font-family:'Pirata One'; font-size: 1.2rem; }
 .ticket-total span:last-child { color: var(--secondary); font-family:'Space Grotesk'; font-weight: 700; font-size: 1.5rem; }
 
 .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 .recipe-card { padding: 20px; background: rgba(216,197,163,0.03); border: 1px solid rgba(216,197,163,0.06); border-radius: 18px; display: flex; flex-direction: column; gap: 10px; }
-.recipe-card h4 { font-family: 'Cinzel'; font-size: 1.05rem; color: #fff; }
+.recipe-card h4 { font-family: 'Pirata One'; font-size: 1.05rem; color: #fff; }
 .recipe-ingredients { list-style: none; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
 .recipe-ingredients li.insufficient { color: var(--danger); }
 .recipe-empty { text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1/-1; }
@@ -303,7 +316,7 @@ select.input-field option { background-color: #000; color: #fff; }
     padding: 30px; display: flex; flex-direction: column;
 }
 .widget-drawer.open { right: 0; }
-.widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-family: 'Cinzel'; }
+.widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-family: 'Pirata One'; }
 .btn-close-widget { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
 .widget-content { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 .widget-card { background: rgba(216,197,163,0.03); border: 1px solid rgba(216,197,163,0.06); border-radius: 16px; padding: 20px; }
@@ -344,7 +357,7 @@ select.input-field option { background-color: #000; color: #fff; }
         <div class="login-logo"><img src="riverside-badge.png" alt="Riverside"></div>
         <h1 class="brand-title">RIVERSIDE</h1>
         <div class="brand-sub">Serenity Lounge</div>
-        <p style="color:var(--text-muted); margin:14px 0 36px; font-size:.95rem;">Système de Gestion Commerciale v1.0</p>
+        <p style="color:var(--text-muted); margin:14px 0 36px; font-size:.95rem;">⚓ Livre de Bord — Système de Gestion v1.0</p>
 
         <div style="text-align:left; margin-bottom:20px;">
             <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-left:10px;">Identifiant</label>
@@ -372,20 +385,20 @@ select.input-field option { background-color: #000; color: #fff; }
         </div>
 
         <div class="nav-menu">
-            <div class="nav-item active" onclick="switchTab('orders', this)"><i class="fas fa-file-invoice-dollar"></i> <span>Commandes</span></div>
-            <div class="nav-item" onclick="switchTab('invoice', this)"><i class="fas fa-cash-register"></i> <span>Facture</span></div>
-            <div class="nav-item" onclick="switchTab('cocktails', this)"><i class="fas fa-blender"></i> <span>Cocktails</span></div>
-            <div class="nav-item" onclick="switchTab('stocks', this)"><i class="fas fa-cubes"></i> <span>Inventaire</span></div>
+            <div class="nav-item active" onclick="switchTab('orders', this)"><i class="fas fa-scroll"></i> <span>Commandes</span></div>
+            <div class="nav-item" onclick="switchTab('invoice', this)"><i class="fas fa-coins"></i> <span>Facture</span></div>
+            <div class="nav-item" onclick="switchTab('cocktails', this)"><i class="fas fa-flask"></i> <span>Cocktails</span></div>
+            <div class="nav-item" onclick="switchTab('stocks', this)"><i class="fas fa-boxes-stacked"></i> <span>Inventaire</span></div>
             <div class="nav-item" onclick="switchTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Carburant</span></div>
-            <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-history"></i> <span>Historique</span></div>
+            <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-book"></i> <span>Historique</span></div>
         </div>
 
         <div class="nav-item" onclick="handleLogout()" style="margin-top:auto; color:var(--danger); border:1px solid rgba(176,64,63,0.25);">
-            <i class="fas fa-power-off"></i> <span>Déconnexion</span>
+            <i class="fas fa-skull-crossbones"></i> <span>Déconnexion</span>
         </div>
     </nav>
 
-    <button onclick="toggleWidgets()" class="btn-widget-float"><i class="fas fa-th-large"></i></button>
+    <button onclick="toggleWidgets()" class="btn-widget-float"><i class="fas fa-compass"></i></button>
 
     <div id="widgetPanel" class="widget-drawer">
         <div class="widget-header">
@@ -434,7 +447,7 @@ select.input-field option { background-color: #000; color: #fff; }
         <div id="ordersTab" class="tab-content active">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:30px;">
                 <div class="glass-panel" style="padding:40px;">
-                    <h2 style="font-family:'Cinzel'; margin-bottom:20px;"><i class="fas fa-receipt"></i> Commande Reçue</h2>
+                    <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-scroll"></i> Commande Reçue</h2>
                     <p style="color:var(--text-muted); margin-bottom:30px;">Déclarer une commande reçue d'un fournisseur.</p>
 
                     <div style="margin-bottom:20px;">
@@ -454,7 +467,7 @@ select.input-field option { background-color: #000; color: #fff; }
                     <button class="btn-action" onclick="submitPurchase()">Enregistrer la commande</button>
                 </div>
                 <div class="glass-panel" style="padding:30px; display:flex; flex-direction:column;">
-                    <h3 style="font-family:'Cinzel'; margin-bottom:20px;">Commandes Récentes</h3>
+                    <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Commandes Récentes</h3>
                     <div style="overflow-y:auto; flex:1; max-height:500px;">
                         <table class="modern-table"><tbody id="purchaseList"></tbody></table>
                     </div>
@@ -465,11 +478,11 @@ select.input-field option { background-color: #000; color: #fff; }
         <div id="invoiceTab" class="tab-content">
             <div class="invoice-layout">
                 <div class="glass-panel" style="padding:30px; max-height:80vh; overflow-y:auto;">
-                    <h2 style="font-family:'Cinzel'; margin-bottom:20px;"><i class="fas fa-martini-glass-citrus"></i> Carte Riverside</h2>
+                    <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-martini-glass-citrus"></i> Carte Riverside</h2>
                     <div id="menuCatalog"></div>
                 </div>
                 <div class="glass-panel ticket-panel">
-                    <h2 style="font-family:'Cinzel'; margin-bottom:6px;"><i class="fas fa-receipt"></i> Ticket de Caisse</h2>
+                    <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-coins"></i> Ticket de Caisse</h2>
                     <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Articles commandés par le client.</p>
                     <div id="ticketLines" class="ticket-lines"></div>
                     <div class="ticket-total">
@@ -484,7 +497,7 @@ select.input-field option { background-color: #000; color: #fff; }
 
         <div id="cocktailsTab" class="tab-content">
             <div class="glass-panel" style="padding:30px; min-height:80vh;">
-                <h2 style="font-family:'Cinzel'; margin-bottom:6px;"><i class="fas fa-blender"></i> Création de Cocktail</h2>
+                <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-flask"></i> Création de Cocktail</h2>
                 <p style="color:var(--text-muted); margin-bottom:30px;">Préparer un cocktail retire ses ingrédients de l'inventaire.</p>
                 <div id="recipeList" class="recipe-grid"></div>
             </div>
@@ -493,7 +506,7 @@ select.input-field option { background-color: #000; color: #fff; }
         <div id="stocksTab" class="tab-content">
             <div class="glass-panel" style="padding:30px; min-height:80vh;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; flex-wrap:wrap; gap:15px;">
-                    <h2 style="font-family:'Cinzel';"><i class="fas fa-boxes-stacked"></i> Inventaire Global</h2>
+                    <h2 style="font-family:'Pirata One';"><i class="fas fa-boxes-stacked"></i> Inventaire Global</h2>
                     <div style="display:flex; gap:15px;">
                         <input type="text" id="searchStockInput" class="input-field" placeholder="Rechercher un ingrédient..." style="width:250px; padding:12px 20px;" onkeyup="filterStocks()">
                         <button class="btn-action" onclick="openStockModal()" style="width:auto; padding:0 25px;"><i class="fas fa-plus"></i> Ajouter</button>
@@ -506,7 +519,7 @@ select.input-field option { background-color: #000; color: #fff; }
         <div id="fuelTab" class="tab-content">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:30px;">
                 <div class="glass-panel" style="padding:40px;">
-                    <h2 style="font-family:'Cinzel'; margin-bottom:20px;"><i class="fas fa-receipt"></i> Note de Frais</h2>
+                    <h2 style="font-family:'Pirata One'; margin-bottom:20px;"><i class="fas fa-receipt"></i> Note de Frais</h2>
                     <p style="color:var(--text-muted); margin-bottom:30px;">Soumettre une demande de remboursement carburant.</p>
                     <div style="margin-bottom:20px;">
                         <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:block;">Véhicule Utilisé</label>
@@ -526,7 +539,7 @@ select.input-field option { background-color: #000; color: #fff; }
                     <button class="btn-action" onclick="declareFuel()" style="margin-top:30px;">Envoyer la demande</button>
                 </div>
                 <div class="glass-panel" style="padding:30px; display:flex; flex-direction:column;">
-                    <h3 style="font-family:'Cinzel'; margin-bottom:20px;">Historique Récent</h3>
+                    <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Historique Récent</h3>
                     <div style="overflow-y:auto; flex:1; max-height:500px;">
                         <table class="modern-table"><tbody id="fuelList"></tbody></table>
                     </div>
@@ -536,7 +549,7 @@ select.input-field option { background-color: #000; color: #fff; }
 
         <div id="historyTab" class="tab-content">
             <div class="glass-panel" style="padding:30px;">
-                <h2 style="font-family:'Cinzel'; margin-bottom:30px;"><i class="fas fa-clock-rotate-left"></i> Journal d'activité</h2>
+                <h2 style="font-family:'Pirata One'; margin-bottom:30px;"><i class="fas fa-clock-rotate-left"></i> Journal d'activité</h2>
                 <div style="max-height:70vh; overflow-y:auto;">
                     <table class="modern-table"><tbody id="hList"></tbody></table>
                 </div>
@@ -549,7 +562,7 @@ select.input-field option { background-color: #000; color: #fff; }
 <div id="modalStock" class="modal-overlay">
     <div class="glass-panel modal-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-            <h2 style="font-family:'Cinzel'; border:none; font-size:1.4rem;">Ajout Stock</h2>
+            <h2 style="font-family:'Pirata One'; border:none; font-size:1.4rem;">Ajout Stock</h2>
             <i class="fas fa-times" onclick="closeStockModal()" style="cursor:pointer; font-size:1.2rem; opacity:0.7;"></i>
         </div>
         <label style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.9rem;">Produit</label>
