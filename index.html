@@ -262,6 +262,13 @@ select.input-field option { background-color: #000; color: #fff; }
 .ticket-total { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 2px solid rgba(216,197,163,0.15); font-family:'Cinzel'; font-size: 1.2rem; }
 .ticket-total span:last-child { color: var(--secondary); font-family:'Space Grotesk'; font-weight: 700; font-size: 1.5rem; }
 
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.recipe-card { padding: 20px; background: rgba(216,197,163,0.03); border: 1px solid rgba(216,197,163,0.06); border-radius: 18px; display: flex; flex-direction: column; gap: 10px; }
+.recipe-card h4 { font-family: 'Cinzel'; font-size: 1.05rem; color: #fff; }
+.recipe-ingredients { list-style: none; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+.recipe-ingredients li.insufficient { color: var(--danger); }
+.recipe-empty { text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1/-1; }
+
 #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 15px; }
 .toast {
     min-width: 300px; padding: 20px; border-radius: 16px;
@@ -366,6 +373,7 @@ select.input-field option { background-color: #000; color: #fff; }
         <div class="nav-menu">
             <div class="nav-item active" onclick="switchTab('orders', this)"><i class="fas fa-file-invoice-dollar"></i> <span>Commandes</span></div>
             <div class="nav-item" onclick="switchTab('invoice', this)"><i class="fas fa-cash-register"></i> <span>Facture</span></div>
+            <div class="nav-item" onclick="switchTab('cocktails', this)"><i class="fas fa-blender"></i> <span>Cocktails</span></div>
             <div class="nav-item" onclick="switchTab('stocks', this)"><i class="fas fa-cubes"></i> <span>Inventaire</span></div>
             <div class="nav-item" onclick="switchTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Carburant</span></div>
             <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-history"></i> <span>Historique</span></div>
@@ -470,6 +478,14 @@ select.input-field option { background-color: #000; color: #fff; }
                     <button class="btn-action" onclick="encaisser()" style="margin-top:16px;"><i class="fas fa-cash-register"></i> Encaisser</button>
                     <button class="btn-circle" onclick="clearTicket()" style="width:100%; border-radius:14px; margin-top:10px; font-size:0.9rem;"><i class="fas fa-trash" style="margin-right:8px;"></i>Vider le ticket</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="cocktailsTab" class="tab-content">
+            <div class="glass-panel" style="padding:30px; min-height:80vh;">
+                <h2 style="font-family:'Cinzel'; margin-bottom:6px;"><i class="fas fa-blender"></i> Création de Cocktail</h2>
+                <p style="color:var(--text-muted); margin-bottom:30px;">Préparer un cocktail retire ses ingrédients de l'inventaire.</p>
+                <div id="recipeList" class="recipe-grid"></div>
             </div>
         </div>
 
@@ -670,15 +686,19 @@ function initializeDashboard() {
     addArticleRow();
     renderMenuCatalog();
     renderTicket();
+    renderRecipes();
 }
 
 /* =========================================
    COMMANDES (reception de commandes fournisseur)
    ========================================= */
 function articleRowHTML() {
+    const options = INGREDIENTS.length
+        ? INGREDIENTS.map(i => `<option value="${i.name}">${i.name}</option>`).join('')
+        : `<option value="" disabled selected>Ajoute d'abord des articles dans l'Inventaire</option>`;
     return `
         <div class="purchase-row">
-            <input type="text" class="input-field article-name" placeholder="Article (ex: Caisses Mojito)">
+            <select class="input-field article-name">${options}</select>
             <input type="number" class="input-field article-qty" placeholder="Qté" min="0">
             <button type="button" class="btn-remove-row" onclick="this.closest('.purchase-row').remove()"><i class="fas fa-times"></i></button>
         </div>`;
@@ -702,12 +722,16 @@ function submitPurchase() {
     purchases.push({ id: Date.now().toString(36), company, date: new Date().toLocaleDateString('fr-FR'), amount, items });
     saveJSON('rvs_purchases', purchases);
 
+    items.forEach(it => { state.stocks[it.title] = (state.stocks[it.title] || 0) + it.qty; });
+    saveJSON('rvs_stocks', state.stocks);
+    renderStockList();
+
     document.getElementById('purchaseCompany').value = '';
     document.getElementById('purchaseAmount').value = '';
     document.getElementById('purchaseRows').innerHTML = '';
     addArticleRow();
 
-    notify(`Commande de ${company} enregistrée`);
+    notify(`Commande de ${company} enregistrée et ajoutée à l'inventaire`);
     renderPurchaseHistory();
 }
 function renderPurchaseHistory() {
@@ -859,6 +883,58 @@ function encaisser() {
 }
 
 /* =========================================
+   CREATION DE COCKTAIL (retire les ingredients de l'inventaire)
+   ========================================= */
+const RECIPES = [
+    // En attente des recettes (ingredients + quantites par cocktail)
+];
+
+function renderRecipes() {
+    const container = document.getElementById('recipeList');
+    if (!RECIPES.length) {
+        container.innerHTML = `<div class="recipe-empty">Aucune recette pour l'instant — envoie les ingrédients de chaque cocktail.</div>`;
+        return;
+    }
+    container.innerHTML = RECIPES.map((r, idx) => {
+        const lines = r.ingredients.map(ing => {
+            const have = state.stocks[ing.name] || 0;
+            const short = have < ing.qty;
+            return `<li class="${short ? 'insufficient' : ''}">${ing.qty} x ${ing.name} <span style="float:right;">(stock: ${have})</span></li>`;
+        }).join('');
+        const canMake = r.ingredients.every(ing => (state.stocks[ing.name] || 0) >= ing.qty);
+        return `
+        <div class="recipe-card">
+            <h4>${r.name}</h4>
+            <ul class="recipe-ingredients">${lines}</ul>
+            <button class="btn-action" style="margin-top:auto;" ${canMake ? '' : 'disabled'} onclick="prepareCocktail(${idx})">
+                <i class="fas fa-martini-glass-citrus"></i> Préparer
+            </button>
+        </div>`;
+    }).join('');
+}
+
+function prepareCocktail(idx) {
+    const recipe = RECIPES[idx];
+    if (!recipe) return;
+    const missing = recipe.ingredients.find(ing => (state.stocks[ing.name] || 0) < ing.qty);
+    if (missing) return notify(`Pas assez de ${missing.name} en stock`, "error");
+
+    recipe.ingredients.forEach(ing => { state.stocks[ing.name] -= ing.qty; });
+    saveJSON('rvs_stocks', state.stocks);
+
+    const hist = loadJSON('rvs_history', []);
+    hist.push({
+        user: state.user, type: 'COCKTAIL', date: new Date().toLocaleString('fr-FR'),
+        items: [{ title: recipe.name, qty: 1 }]
+    });
+    saveJSON('rvs_history', hist);
+
+    notify(`${recipe.name} préparé — ingrédients retirés de l'inventaire`);
+    renderStockList();
+    renderRecipes();
+}
+
+/* =========================================
    STOCKS
    ========================================= */
 function filterStocks() {
@@ -979,6 +1055,7 @@ function switchTab(tabId, element) {
     if(tabId === 'history') loadHistory();
     if(tabId === 'fuel') loadFuelHistory();
     if(tabId === 'stocks') renderStockList();
+    if(tabId === 'cocktails') renderRecipes();
 }
 function loadHistory() {
     const tbody = document.getElementById('hList');
