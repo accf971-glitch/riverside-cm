@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
 /* =========================================
@@ -379,8 +378,7 @@ select.input-field option { background-color: #000; color: #fff; }
         </div>
 
         <div class="nav-menu">
-            <div class="nav-item active" onclick="switchTab('export', this)"><i class="fas fa-dolly"></i> <span>Exportation</span></div>
-            <div class="nav-item" onclick="switchTab('orders', this)"><i class="fas fa-file-invoice-dollar"></i> <span>Commandes</span></div>
+            <div class="nav-item active" onclick="switchTab('orders', this)"><i class="fas fa-file-invoice-dollar"></i> <span>Commandes</span></div>
             <div class="nav-item" onclick="switchTab('stocks', this)"><i class="fas fa-cubes"></i> <span>Inventaire</span></div>
             <div class="nav-item" onclick="switchTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Carburant</span></div>
             <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-history"></i> <span>Historique</span></div>
@@ -443,28 +441,7 @@ select.input-field option { background-color: #000; color: #fff; }
             </div>
         </div>
 
-        <div id="exportTab" class="tab-content active">
-            <div class="glass-panel export-wrapper">
-                <div style="width:80px; height:80px; border-radius:50%; background:rgba(156,42,48,0.12); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:var(--primary); font-size:2rem;">
-                    <i class="fas fa-box-open"></i>
-                </div>
-                <h2 style="font-family:'Cinzel'; margin-bottom:10px;">Saisie Exportation</h2>
-                <p style="color:var(--text-muted); margin-bottom:40px;">Indiquez le nombre de caisses traitées aujourd'hui.</p>
-                <div style="display:flex; align-items:center; justify-content:center; gap:30px; margin-bottom:40px;">
-                    <button class="btn-circle" onclick="adjustExport(-1)"><i class="fas fa-minus"></i></button>
-                    <input type="number" id="inputExport" class="big-counter" value="0" oninput="calculate()">
-                    <button class="btn-circle" onclick="adjustExport(1)"><i class="fas fa-plus"></i></button>
-                </div>
-                <button id="btnExport" class="btn-action" onclick="validateExport()" disabled style="max-width:300px; margin:0 auto;">
-                    <i class="fas fa-check-circle"></i> Valider la Saisie
-                </button>
-            </div>
-            <div class="glass-panel" style="margin-top:30px; padding:30px; height:350px;">
-                <canvas id="activityChart"></canvas>
-            </div>
-        </div>
-
-        <div id="ordersTab" class="tab-content">
+        <div id="ordersTab" class="tab-content active">
             <div class="glass-panel" style="padding:30px; min-height:80vh; display:flex; flex-direction:column;">
                 <div style="margin-bottom: 20px;">
                     <h2 style="font-family:'Cinzel'; font-size: 1.8rem; margin-bottom: 10px;">
@@ -596,7 +573,7 @@ const DEFAULT_ORDERS = [
     { id: '7a5', client: 'Yellow Jack', date: '2026-11-10', status: 'Livré', total: 5400, items: [{title:'Caisses Collations', qty: 20}] },
 ];
 
-let state = { user: "", weeklyTotal: 0, quota: 200, stocks: {}, chartInstance: null };
+let state = { user: "", weeklyTotal: 0, quota: 200, stocks: {} };
 let currentOrderFilter = 'all';
 let cachedOrders = [];
 
@@ -707,92 +684,20 @@ function initializeDashboard() {
     state.weeklyTotal = loadJSON('rvs_weekly', 0);
     state.stocks = loadJSON('rvs_stocks', {});
 
-    initChart();
     initDragAndDrop();
-    updateUI();
+    renderQuota();
     renderStockList();
+    loadOrders();
 }
 
-function updateUI() {
-    calculate();
-    if(state.chartInstance) {
-        const hist = loadJSON('rvs_history', []);
-        const byDay = [0,0,0,0,0,0,0];
-        hist.filter(h => h.type === 'EXPORT').forEach((h,i) => { byDay[i % 7] += (h.items[0] ? h.items[0].qty : 0); });
-        state.chartInstance.data.datasets[0].data = byDay;
-        state.chartInstance.update();
-    }
-}
-
-/* =========================================
-   GRAPHIQUE
-   ========================================= */
-function initChart() {
-    const ctx = document.getElementById('activityChart').getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(156, 42, 48, 0.45)');
-    gradient.addColorStop(1, 'rgba(156, 42, 48, 0)');
-
-    state.chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
-            datasets: [{
-                label: 'Caisses Traitées', data: [0,0,0,0,0,0,0],
-                borderColor: '#c9922f', backgroundColor: gradient, borderWidth: 3, tension: 0.4,
-                pointBackgroundColor: '#171717', pointBorderColor: '#D8C5A3', pointHoverRadius: 6, fill: true
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display:false }, tooltip: { backgroundColor:'rgba(0,0,0,0.85)', titleColor:'#D8C5A3', bodyFont:{family:'Outfit'} } },
-            scales: {
-                y: { beginAtZero:true, grid:{color:'rgba(216,197,163,0.06)'}, ticks:{color:'#a79c8a', font:{family:'Outfit'}} },
-                x: { grid:{display:false}, ticks:{color:'#a79c8a', font:{family:'Outfit'}} }
-            }
-        }
-    });
-}
-
-/* =========================================
-   EXPORTATION
-   ========================================= */
-function calculate() {
-    let inputVal = parseInt(document.getElementById('inputExport').value) || 0;
-    let total = (state.weeklyTotal || 0) + inputVal;
+function renderQuota() {
+    const total = state.weeklyTotal || 0;
     document.getElementById('statTotal').textContent = `${total} / ${state.quota}`;
     const percent = Math.min((total / state.quota) * 100, 100);
     const bar = document.getElementById('miniBar');
     bar.style.width = percent + "%";
     if(percent >= 100) { bar.style.backgroundColor = '#c9922f'; bar.style.boxShadow = '0 0 20px #c9922f'; }
     else { bar.style.backgroundColor = 'var(--primary)'; bar.style.boxShadow = '0 0 20px var(--primary-glow)'; }
-    document.getElementById('btnExport').disabled = (inputVal <= 0 || total > state.quota);
-}
-function adjustExport(val) {
-    const input = document.getElementById('inputExport');
-    let current = parseInt(input.value) || 0;
-    if(current + val >= 0) { input.value = current + val; calculate(); }
-}
-function validateExport() {
-    const btn = document.getElementById('btnExport');
-    const qty = parseInt(document.getElementById('inputExport').value);
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Envoi...';
-    btn.disabled = true;
-
-    setTimeout(() => {
-        const hist = loadJSON('rvs_history', []);
-        hist.push({ user: state.user, type: 'EXPORT', date: new Date().toLocaleString('fr-FR'), items: [{title: 'Caisses', qty: qty}] });
-        saveJSON('rvs_history', hist);
-
-        state.weeklyTotal += qty;
-        saveJSON('rvs_weekly', state.weeklyTotal);
-        document.getElementById('inputExport').value = 0;
-        notify(`Exportation de ${qty} caisses validée !`);
-        updateUI();
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> Valider la Saisie';
-        btn.disabled = false;
-        calculate();
-    }, 350);
 }
 
 /* =========================================
