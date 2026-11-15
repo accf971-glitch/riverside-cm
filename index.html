@@ -234,6 +234,34 @@ select.input-field option { background-color: #000; color: #fff; }
 }
 .btn-add-row:hover { border-color: var(--primary); color: #e8b4b4; background: rgba(156,42,48,0.06); }
 
+/* ---------- FACTURE / TICKET DE CAISSE ---------- */
+.invoice-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: start; }
+@media (max-width: 1000px) { .invoice-layout { grid-template-columns: 1fr; } }
+.menu-category { margin-bottom: 28px; }
+.menu-category:last-child { margin-bottom: 0; }
+.menu-category h3 { font-family: 'Cinzel'; font-size: 1.1rem; color: var(--secondary); margin-bottom: 4px; border-bottom: 1px solid rgba(216,197,163,0.1); padding-bottom: 10px; }
+.menu-item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 4px; border-bottom: 1px dashed rgba(216,197,163,0.08); }
+.menu-item-row:last-child { border-bottom: none; }
+.menu-item-name { font-weight: 600; color: #fff; font-size: 0.92rem; }
+.menu-item-name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 0.75rem; font-style: italic; }
+.menu-item-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.btn-add-item {
+    padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(156,42,48,0.3);
+    background: rgba(156,42,48,0.12); color: #e8b4b4; font-family:'Space Grotesk'; font-weight:700;
+    font-size: 0.82rem; cursor: pointer; transition: 0.2s; white-space: nowrap;
+}
+.btn-add-item:hover { background: var(--primary); color: #fff; }
+.ticket-panel { padding: 30px; position: sticky; top: 0; display: flex; flex-direction: column; }
+.ticket-lines { flex: 1; min-height: 60px; max-height: 45vh; overflow-y: auto; margin-bottom: 10px; }
+.ticket-line { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(216,197,163,0.06); font-size: 0.88rem; }
+.ticket-line .tl-name { color: #fff; font-weight: 600; }
+.ticket-line .tl-sub { color: var(--text-muted); font-size: 0.78rem; }
+.ticket-line .tl-amount { font-family:'Space Grotesk'; font-weight:700; color: var(--secondary); white-space: nowrap; }
+.ticket-line .tl-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.9rem; padding: 4px; }
+.ticket-empty { text-align: center; color: var(--text-muted); padding: 30px 0; font-size: 0.9rem; }
+.ticket-total { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 2px solid rgba(216,197,163,0.15); font-family:'Cinzel'; font-size: 1.2rem; }
+.ticket-total span:last-child { color: var(--secondary); font-family:'Space Grotesk'; font-weight: 700; font-size: 1.5rem; }
+
 #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 15px; }
 .toast {
     min-width: 300px; padding: 20px; border-radius: 16px;
@@ -337,6 +365,7 @@ select.input-field option { background-color: #000; color: #fff; }
 
         <div class="nav-menu">
             <div class="nav-item active" onclick="switchTab('orders', this)"><i class="fas fa-file-invoice-dollar"></i> <span>Commandes</span></div>
+            <div class="nav-item" onclick="switchTab('invoice', this)"><i class="fas fa-cash-register"></i> <span>Facture</span></div>
             <div class="nav-item" onclick="switchTab('stocks', this)"><i class="fas fa-cubes"></i> <span>Inventaire</span></div>
             <div class="nav-item" onclick="switchTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Carburant</span></div>
             <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-history"></i> <span>Historique</span></div>
@@ -420,6 +449,26 @@ select.input-field option { background-color: #000; color: #fff; }
                     <div style="overflow-y:auto; flex:1; max-height:500px;">
                         <table class="modern-table"><tbody id="purchaseList"></tbody></table>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="invoiceTab" class="tab-content">
+            <div class="invoice-layout">
+                <div class="glass-panel" style="padding:30px; max-height:80vh; overflow-y:auto;">
+                    <h2 style="font-family:'Cinzel'; margin-bottom:20px;"><i class="fas fa-martini-glass-citrus"></i> Carte Riverside</h2>
+                    <div id="menuCatalog"></div>
+                </div>
+                <div class="glass-panel ticket-panel">
+                    <h2 style="font-family:'Cinzel'; margin-bottom:6px;"><i class="fas fa-receipt"></i> Ticket de Caisse</h2>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Articles commandés par le client.</p>
+                    <div id="ticketLines" class="ticket-lines"></div>
+                    <div class="ticket-total">
+                        <span>Total à facturer</span>
+                        <span id="ticketTotal">0$</span>
+                    </div>
+                    <button class="btn-action" onclick="encaisser()" style="margin-top:16px;"><i class="fas fa-cash-register"></i> Encaisser</button>
+                    <button class="btn-circle" onclick="clearTicket()" style="width:100%; border-radius:14px; margin-top:10px; font-size:0.9rem;"><i class="fas fa-trash" style="margin-right:8px;"></i>Vider le ticket</button>
                 </div>
             </div>
         </div>
@@ -528,6 +577,11 @@ function ensureSeed() {
     }
     if (!localStorage.getItem('rvs_history')) saveJSON('rvs_history', []);
     if (!localStorage.getItem('rvs_fuel')) saveJSON('rvs_fuel', []);
+
+    if (!localStorage.getItem('rvs_cleanup_v2')) {
+        saveJSON('rvs_history', []);
+        localStorage.setItem('rvs_cleanup_v2', '1');
+    }
 }
 
 /* =========================================
@@ -614,6 +668,8 @@ function initializeDashboard() {
     renderStockList();
     renderPurchaseHistory();
     addArticleRow();
+    renderMenuCatalog();
+    renderTicket();
 }
 
 /* =========================================
@@ -665,6 +721,141 @@ function renderPurchaseHistory() {
             <td style="color:var(--text-muted);">${(p.items||[]).map(i => `${i.qty}x ${i.title}`).join(', ')}</td>
             <td style="text-align:right; color:var(--secondary); font-weight:700;">${formatMoney(p.amount || 0)}</td>
         </tr>`).join('');
+}
+
+/* =========================================
+   FACTURE / TICKET DE CAISSE
+   ========================================= */
+const MENU_CATALOG = [
+    { category: 'Alcools', items: [
+        { name: 'Rosé', verre: 20, bouteille: 165 },
+        { name: 'Vin rouge', verre: 40, bouteille: 150 },
+        { name: 'Vin blanc', verre: 50, bouteille: 180 },
+        { name: 'Whisky', verre: 50, bouteille: 200 },
+        { name: 'Vin rouge de luxe', verre: 65, bouteille: 250 },
+        { name: 'Gin', verre: 70, bouteille: 260 },
+        { name: 'Champagne', verre: 70, bouteille: 280 },
+        { name: 'Vodka', verre: 75, bouteille: 290 },
+        { name: 'Rhum', verre: 75, bouteille: 280 },
+        { name: 'Tequila', bouteille: 215 },
+        { name: 'Champagne de luxe', bouteille: 340 },
+    ]},
+    { category: 'Cocktails', items: [
+        { name: 'Swimming Pool', sub: 'tequila, citron, myrtille, sucre, eau', price: 45 },
+        { name: 'Sex on the Beach', sub: 'gin, orange, citron jaune & vert', price: 50 },
+        { name: 'Royal Sunset', sub: 'champagne, fraise, sucre', price: 55 },
+        { name: 'Pink Lady', sub: 'vodka, lait, fraise, citron', price: 55 },
+        { name: 'Riverside', sub: 'gin, mangue, pêche, fraise', price: 65 },
+        { name: 'Sol de Habana', sub: 'vodka, ananas, fraise, citron', price: 80 },
+        { name: 'Pina Colada', sub: 'rhum, ananas, lait', price: 180 },
+        { name: 'Mojito', sub: 'rhum, citron vert', price: 150 },
+    ]},
+    { category: 'Softs & Mocktails', items: [
+        { name: 'Verde Vita', sub: 'champomax, kiwi, citron', price: 25 },
+        { name: 'Virgin Mojito', sub: 'eau, citron vert, sucre', price: 40 },
+        { name: 'Red King', sub: 'eau, pomme, orange, fraise, myrtille', price: 55 },
+        { name: 'Verre de champomax', price: 15 },
+        { name: 'Limonade rose', price: 60 },
+        { name: 'MV Energy', price: 60 },
+        { name: 'Kombucha', sub: 'mangue, citron vert', price: 80 },
+    ]},
+    { category: 'Collations', items: [
+        { name: 'Chips épicées', price: 10 },
+        { name: "Chips à l'ancienne", price: 15 },
+        { name: 'Chips cheesy', price: 25 },
+        { name: 'Verrine caramel exotique', price: 60 },
+        { name: 'Tiramisu fraise', price: 60 },
+        { name: 'Steak potatoes', price: 70 },
+        { name: 'Tartare crevettes, avocat, mangue', price: 85 },
+    ]},
+    { category: 'Shots', items: [
+        { name: 'Shot (vodka, gin, rhum, tequila)', price: 30 },
+        { name: 'Mètre de shots', price: 280 },
+    ]},
+];
+
+let ticket = [];
+
+function renderMenuCatalog() {
+    const container = document.getElementById('menuCatalog');
+    container.innerHTML = MENU_CATALOG.map(cat => `
+        <div class="menu-category">
+            <h3>${cat.category}</h3>
+            ${cat.items.map(it => {
+                const sub = it.sub ? `<small>${it.sub}</small>` : '';
+                let actions = '';
+                if (it.verre !== undefined && it.bouteille !== undefined) {
+                    actions = `
+                        <button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.verre}, 'verre')">+ Verre ${it.verre}$</button>
+                        <button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.bouteille}, 'bouteille')">+ Bouteille ${it.bouteille}$</button>`;
+                } else if (it.bouteille !== undefined) {
+                    actions = `<button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.bouteille}, 'bouteille')">+ Bouteille ${it.bouteille}$</button>`;
+                } else {
+                    actions = `<button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.price})">+ Ajouter ${it.price}$</button>`;
+                }
+                return `<div class="menu-item-row">
+                    <div class="menu-item-name">${it.name}${sub}</div>
+                    <div class="menu-item-actions">${actions}</div>
+                </div>`;
+            }).join('')}
+        </div>`).join('');
+}
+function esc(s) { return String(s).replace(/'/g, "\\'"); }
+
+function addToTicket(name, price, variant) {
+    const label = variant ? `${name} (${variant})` : name;
+    const existing = ticket.find(l => l.label === label && l.price === price);
+    if (existing) existing.qty += 1;
+    else ticket.push({ label, price, qty: 1 });
+    renderTicket();
+}
+function changeTicketQty(idx, delta) {
+    ticket[idx].qty += delta;
+    if (ticket[idx].qty <= 0) ticket.splice(idx, 1);
+    renderTicket();
+}
+function removeTicketLine(idx) {
+    ticket.splice(idx, 1);
+    renderTicket();
+}
+function renderTicket() {
+    const container = document.getElementById('ticketLines');
+    if (!ticket.length) {
+        container.innerHTML = `<div class="ticket-empty">Aucun article ajouté.</div>`;
+    } else {
+        container.innerHTML = ticket.map((l, idx) => `
+            <div class="ticket-line">
+                <div>
+                    <div class="tl-name">${l.label}</div>
+                    <div class="tl-sub">${l.qty} x ${formatMoney(l.price)}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="tl-amount">${formatMoney(l.qty * l.price)}</div>
+                    <button class="tl-remove" onclick="removeTicketLine(${idx})"><i class="fas fa-times"></i></button>
+                </div>
+            </div>`).join('');
+    }
+    const total = ticket.reduce((sum, l) => sum + l.qty * l.price, 0);
+    document.getElementById('ticketTotal').textContent = formatMoney(total);
+}
+function clearTicket() {
+    ticket = [];
+    renderTicket();
+}
+function encaisser() {
+    if (!ticket.length) return notify("Le ticket est vide", "error");
+    const total = ticket.reduce((sum, l) => sum + l.qty * l.price, 0);
+
+    const hist = loadJSON('rvs_history', []);
+    hist.push({
+        user: state.user, type: 'VENTE', date: new Date().toLocaleString('fr-FR'),
+        items: [{ title: ticket.map(l => `${l.qty}x ${l.label}`).join(', '), qty: ticket.reduce((s,l)=>s+l.qty,0) }],
+        total
+    });
+    saveJSON('rvs_history', hist);
+
+    notify(`Vente encaissée : ${formatMoney(total)}`);
+    clearTicket();
 }
 
 /* =========================================
@@ -799,7 +990,7 @@ function loadHistory() {
             <tr>
                 <td style="color:var(--text-muted);">${h.date}</td>
                 <td><b style="color:var(--secondary); text-transform:uppercase; letter-spacing:1px;">${h.type}</b></td>
-                <td>${h.items[0].qty} x ${h.items[0].title}</td>
+                <td>${h.type === 'VENTE' ? h.items[0].title : `${h.items[0].qty} x ${h.items[0].title}`}${h.total ? ` — ${formatMoney(h.total)}` : ''}</td>
                 <td style="text-align:right; opacity:0.6;">${h.user}</td>
             </tr>`).join('');
     }, 250);
