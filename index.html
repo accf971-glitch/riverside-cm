@@ -245,6 +245,7 @@ select.input-field option { background-color: #000; color: #fff; }
 .menu-item-name { font-weight: 600; color: #fff; font-size: 0.92rem; }
 .menu-item-name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 0.75rem; font-style: italic; }
 .menu-item-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.qty-input { width: 56px; padding: 8px 6px !important; text-align: center; flex: none; }
 .btn-add-item {
     padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(156,42,48,0.3);
     background: rgba(156,42,48,0.12); color: #e8b4b4; font-family:'Space Grotesk'; font-weight:700;
@@ -810,27 +811,34 @@ function renderMenuCatalog() {
                 let actions = '';
                 if (it.verre !== undefined && it.bouteille !== undefined) {
                     actions = `
-                        <button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.verre}, 'verre')">+ Verre ${it.verre}$</button>
-                        <button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.bouteille}, 'bouteille')">+ Bouteille ${it.bouteille}$</button>`;
+                        <button type="button" class="btn-add-item" onclick="addToTicket(this, '${esc(it.name)}', ${it.verre}, 'verre')">+ Verre ${it.verre}$</button>
+                        <button type="button" class="btn-add-item" onclick="addToTicket(this, '${esc(it.name)}', ${it.bouteille}, 'bouteille')">+ Bouteille ${it.bouteille}$</button>`;
                 } else if (it.bouteille !== undefined) {
-                    actions = `<button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.bouteille}, 'bouteille')">+ Bouteille ${it.bouteille}$</button>`;
+                    actions = `<button type="button" class="btn-add-item" onclick="addToTicket(this, '${esc(it.name)}', ${it.bouteille}, 'bouteille')">+ Bouteille ${it.bouteille}$</button>`;
                 } else {
-                    actions = `<button type="button" class="btn-add-item" onclick="addToTicket('${esc(it.name)}', ${it.price})">+ Ajouter ${it.price}$</button>`;
+                    actions = `<button type="button" class="btn-add-item" onclick="addToTicket(this, '${esc(it.name)}', ${it.price})">+ Ajouter ${it.price}$</button>`;
                 }
                 return `<div class="menu-item-row">
                     <div class="menu-item-name">${it.name}${sub}</div>
-                    <div class="menu-item-actions">${actions}</div>
+                    <div class="menu-item-actions">
+                        <input type="number" class="input-field qty-input" value="1" min="1">
+                        ${actions}
+                    </div>
                 </div>`;
             }).join('')}
         </div>`).join('');
 }
 function esc(s) { return String(s).replace(/'/g, "\\'"); }
 
-function addToTicket(name, price, variant) {
+function addToTicket(btn, name, price, variant) {
+    const row = btn.closest('.menu-item-row');
+    const qtyInput = row.querySelector('.qty-input');
+    const qty = Math.max(1, parseInt(qtyInput.value) || 1);
     const label = variant ? `${name} (${variant})` : name;
     const existing = ticket.find(l => l.label === label && l.price === price);
-    if (existing) existing.qty += 1;
-    else ticket.push({ label, price, qty: 1 });
+    if (existing) existing.qty += qty;
+    else ticket.push({ label, price, qty });
+    qtyInput.value = 1;
     renderTicket();
 }
 function changeTicketQty(idx, delta) {
