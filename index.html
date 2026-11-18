@@ -426,9 +426,8 @@ select.input-field option { background-color: #000; color: #fff; }
             <span>Rester connecté</span>
         </label>
 
-        <button id="btnLogin" onclick="handleLogin()" class="btn-action">
-            <span>Connexion Sécurisée</span>
-            <i class="fas fa-arrow-right"></i>
+        <button id="btnLogin" onclick="handleLogin()" class="btn-action" disabled>
+            <i class="fas fa-circle-notch fa-spin"></i> Connexion au serveur...
         </button>
     </div>
 </div>
@@ -761,6 +760,8 @@ select.input-field option { background-color: #000; color: #fff; }
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script>
 /* =========================================
    CONFIGURATION & DONNEES - RIVERSIDE
@@ -779,32 +780,93 @@ const DEFAULT_PURCHASES = [];
 let state = { user: "", stocks: {} };
 
 /* =========================================
-   PERSISTANCE LOCALE (localStorage)
+   PERSISTANCE PARTAGEE (Firebase Firestore)
+   Toutes les données du site (comptes, stocks, ventes, historique,
+   carburant, commissions, partenariats) sont stockées dans un
+   document Firestore par clé, mises en cache ici en mémoire, et
+   synchronisées en temps réel entre tous les navigateurs.
    ========================================= */
+const firebaseConfig = {
+    apiKey: "AIzaSyDzp6vckp82Yh63H8TXPN7sxYrmtuPLr-w",
+    authDomain: "riverside-cm.firebaseapp.com",
+    projectId: "riverside-cm",
+    storageBucket: "riverside-cm.firebasestorage.app",
+    messagingSenderId: "58213301200",
+    appId: "1:58213301200:web:32fae375fc8e2e0fcd17d5"
+};
+firebase.initializeApp(firebaseConfig);
+
+const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/riverside-cm/databases/default/documents/riverside_data';
+const CLOUD_KEYS = ['rvs_users', 'rvs_purchases', 'rvs_stocks', 'rvs_history', 'rvs_fuel', 'rvs_commission_rates', 'rvs_partners'];
+let DB_CACHE = {};
+
+/* Encodage/décodage entre valeurs JS classiques et le format typé de l'API REST Firestore */
+function toFirestoreValue(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean') return { booleanValue: v };
+    if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+    if (typeof v === 'string') return { stringValue: v };
+    if (Array.isArray(v)) return { arrayValue: { values: v.map(toFirestoreValue) } };
+    const fields = {};
+    Object.keys(v).forEach(k => { fields[k] = toFirestoreValue(v[k]); });
+    return { mapValue: { fields } };
+}
+function fromFirestoreValue(fv) {
+    if (!fv) return null;
+    if ('nullValue' in fv) return null;
+    if ('booleanValue' in fv) return fv.booleanValue;
+    if ('integerValue' in fv) return parseInt(fv.integerValue, 10);
+    if ('doubleValue' in fv) return fv.doubleValue;
+    if ('stringValue' in fv) return fv.stringValue;
+    if ('arrayValue' in fv) return (fv.arrayValue.values || []).map(fromFirestoreValue);
+    if ('mapValue' in fv) {
+        const out = {};
+        const f = fv.mapValue.fields || {};
+        Object.keys(f).forEach(k => { out[k] = fromFirestoreValue(f[k]); });
+        return out;
+    }
+    return null;
+}
+async function firestoreGetDoc(key) {
+    const token = await firebase.auth().currentUser.getIdToken();
+    const resp = await fetch(`${FIRESTORE_BASE}/${key}`, { headers: { Authorization: 'Bearer ' + token } });
+    if (resp.status === 404) return undefined;
+    if (!resp.ok) throw new Error('Firestore GET ' + resp.status);
+    const data = await resp.json();
+    return data.fields && data.fields.value ? fromFirestoreValue(data.fields.value) : undefined;
+}
+async function firestoreSetDoc(key, value) {
+    const token = await firebase.auth().currentUser.getIdToken();
+    const resp = await fetch(`${FIRESTORE_BASE}/${key}`, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { value: toFirestoreValue(value) } })
+    });
+    if (!resp.ok) throw new Error('Firestore SET ' + resp.status);
+}
+
 function loadJSON(key, fallback) {
-    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-    catch(e) { return fallback; }
+    const v = DB_CACHE[key];
+    return v !== undefined ? v : fallback;
 }
 function saveJSON(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+    DB_CACHE[key] = val;
+    if (!CLOUD_KEYS.includes(key)) return;
+    firestoreSetDoc(key, val).catch(e => notify("Erreur de synchronisation : " + e.message, "error"));
 }
 function ensureSeed() {
-    if (!localStorage.getItem('rvs_users')) saveJSON('rvs_users', DEFAULT_USERS);
-    if (!localStorage.getItem('rvs_purchases')) saveJSON('rvs_purchases', DEFAULT_PURCHASES);
-    if (!localStorage.getItem('rvs_stocks')) {
+    if (DB_CACHE['rvs_users'] === undefined) saveJSON('rvs_users', DEFAULT_USERS);
+    if (DB_CACHE['rvs_purchases'] === undefined) saveJSON('rvs_purchases', DEFAULT_PURCHASES);
+    if (DB_CACHE['rvs_stocks'] === undefined) {
         const s = {};
         INGREDIENTS.forEach(ing => { s[ing.name] = 0; });
         saveJSON('rvs_stocks', s);
     }
-    if (!localStorage.getItem('rvs_history')) saveJSON('rvs_history', []);
-    if (!localStorage.getItem('rvs_fuel')) saveJSON('rvs_fuel', []);
-    if (!localStorage.getItem('rvs_commission_rates')) saveJSON('rvs_commission_rates', {});
-    if (!localStorage.getItem('rvs_partners')) saveJSON('rvs_partners', []);
+    if (DB_CACHE['rvs_history'] === undefined) saveJSON('rvs_history', []);
+    if (DB_CACHE['rvs_fuel'] === undefined) saveJSON('rvs_fuel', []);
+    if (DB_CACHE['rvs_commission_rates'] === undefined) saveJSON('rvs_commission_rates', {});
+    if (DB_CACHE['rvs_partners'] === undefined) saveJSON('rvs_partners', []);
 
-    if (!localStorage.getItem('rvs_cleanup_v2')) {
-        saveJSON('rvs_history', []);
-        localStorage.setItem('rvs_cleanup_v2', '1');
-    }
     if (!localStorage.getItem('rvs_poste_migration')) {
         const users = loadJSON('rvs_users', DEFAULT_USERS);
         users.forEach(u => { if (!u.poste) u.poste = (u.user === 'A.Oliveira') ? 'Patron' : 'Non assigné'; });
@@ -827,6 +889,44 @@ function ensureSeed() {
         saveJSON('rvs_users', users);
         localStorage.setItem('rvs_poste_fix_v3', '1');
     }
+}
+
+async function bootstrapCloud() {
+    await firebase.auth().signInAnonymously();
+    await Promise.all(CLOUD_KEYS.map(async key => {
+        const v = await firestoreGetDoc(key);
+        if (v !== undefined) DB_CACHE[key] = v;
+    }));
+    setInterval(pollCloud, 4000);
+}
+async function pollCloud() {
+    for (const key of CLOUD_KEYS) {
+        try {
+            const v = await firestoreGetDoc(key);
+            if (v !== undefined && JSON.stringify(v) !== JSON.stringify(DB_CACHE[key])) {
+                DB_CACHE[key] = v;
+                refreshLiveView(key);
+            }
+        } catch (e) { /* ignore transient poll errors, retry next cycle */ }
+    }
+}
+
+function refreshLiveView(key) {
+    if (!document.getElementById('app').classList.contains('visible')) return;
+    if (key === 'rvs_stocks') state.stocks = DB_CACHE['rvs_stocks'] || {};
+    if (key === 'rvs_partners') return renderPartners();
+
+    const activeTab = document.querySelector('.tab-content.active');
+    const activeId = activeTab ? activeTab.id : '';
+    if (key === 'rvs_users' && activeId === 'accountsTab') renderAccounts();
+    if (key === 'rvs_purchases' && activeId === 'ordersTab') renderPurchaseHistory();
+    if (key === 'rvs_stocks' && activeId === 'stocksTab') renderStockList();
+    if (key === 'rvs_stocks' && activeId === 'cocktailsTab') renderRecipes();
+    if (key === 'rvs_history' && activeId === 'historyTab') loadHistory();
+    if (key === 'rvs_history' && activeId === 'salariesTab') renderSalaries();
+    if (key === 'rvs_history' && activeId === 'myactionsTab') renderMyActions();
+    if (key === 'rvs_fuel' && activeId === 'fuelTab') loadFuelHistory();
+    if (key === 'rvs_commission_rates' && activeId === 'salariesTab') renderSalaries();
 }
 
 /* =========================================
@@ -1717,15 +1817,35 @@ function saveNote() {
 /* =========================================
    BOOT
    ========================================= */
-ensureSeed();
-const existingSession = localStorage.getItem('rvs_session') || sessionStorage.getItem('rvs_session');
-if (existingSession) {
-    state.user = existingSession;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').classList.add('visible');
-    window.addEventListener('DOMContentLoaded', initializeDashboard);
-    if (document.readyState !== 'loading') initializeDashboard();
+async function boot() {
+    const btn = document.getElementById('btnLogin');
+    try {
+        await bootstrapCloud();
+    } catch (e) {
+        btn.innerHTML = '<i class="fas fa-rotate"></i> Connexion impossible — Réessayer';
+        btn.disabled = false;
+        btn.onclick = () => location.reload();
+        return;
+    }
+    ensureSeed();
+    btn.innerHTML = '<span>Connexion Sécurisée</span> <i class="fas fa-arrow-right"></i>';
+    btn.disabled = false;
+
+    const existingSession = localStorage.getItem('rvs_session') || sessionStorage.getItem('rvs_session');
+    if (existingSession) {
+        const found = loadJSON('rvs_users', DEFAULT_USERS).find(u => u.user === existingSession);
+        if (found) {
+            state.user = existingSession;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').classList.add('visible');
+            initializeDashboard();
+        } else {
+            localStorage.removeItem('rvs_session');
+            sessionStorage.removeItem('rvs_session');
+        }
+    }
 }
+boot();
 </script>
 </body>
 </html>
