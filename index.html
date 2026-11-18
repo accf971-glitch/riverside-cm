@@ -600,26 +600,17 @@ select.input-field option { background-color: #000; color: #fff; }
 
         <div id="salariesTab" class="tab-content">
             <div class="glass-panel" style="padding:30px; margin-bottom:30px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
-                    <div>
-                        <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-sack-dollar"></i> Salaires</h2>
-                        <p style="color:var(--text-muted); font-size:0.9rem;">Salaire calculé sur les ventes encaissées par chaque employé.</p>
-                    </div>
-                    <div style="display:flex; align-items:flex-end; gap:12px;">
-                        <div>
-                            <label style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px; display:block;">Taux de commission (%)</label>
-                            <input type="number" id="commissionRate" class="input-field" style="width:120px; padding:12px 16px;" min="0" step="0.5">
-                        </div>
-                        <button class="btn-action" style="width:auto; padding:0 22px; height:46px;" onclick="saveCommissionRate()"><i class="fas fa-floppy-disk"></i> Enregistrer</button>
-                    </div>
-                </div>
-                <div class="catalog-chips" id="salaryPeriodChips" style="margin-top:20px;"></div>
+                <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-sack-dollar"></i> Salaires — Semaine en cours</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">Salaire calculé chaque semaine (lundi → dimanche) sur les ventes encaissées par chaque employé, selon le taux de commission de son poste.</p>
+                <label style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px; display:block;">Taux de commission par poste (%)</label>
+                <div id="posteRates" style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:16px;"></div>
+                <button class="btn-action" style="width:auto; padding:0 22px; height:46px;" onclick="saveCommissionRates()"><i class="fas fa-floppy-disk"></i> Enregistrer les taux</button>
             </div>
 
             <div class="glass-panel" style="padding:30px;">
                 <div style="overflow-x:auto;">
                     <table class="modern-table">
-                        <thead><tr><th>Employé</th><th>Ventes réalisées</th><th>Chiffre d'affaire</th><th>Salaire</th></tr></thead>
+                        <thead><tr><th>Employé</th><th>Poste</th><th>Ventes réalisées</th><th>Chiffre d'affaire (semaine)</th><th>Salaire</th></tr></thead>
                         <tbody id="salaryList"></tbody>
                     </table>
                 </div>
@@ -669,7 +660,7 @@ const INGREDIENTS = [
     // En attente de la liste d'articles a fournir
 ];
 
-const DEFAULT_USERS = [ { user: 'A.Oliveira', pass: 'riverside26', status: 'Actif' } ];
+const DEFAULT_USERS = [ { user: 'A.Oliveira', pass: 'riverside26', status: 'Actif', poste: 'Patron' } ];
 
 const DEFAULT_PURCHASES = [];
 
@@ -695,12 +686,18 @@ function ensureSeed() {
     }
     if (!localStorage.getItem('rvs_history')) saveJSON('rvs_history', []);
     if (!localStorage.getItem('rvs_fuel')) saveJSON('rvs_fuel', []);
-    if (localStorage.getItem('rvs_commission_rate') === null) saveJSON('rvs_commission_rate', 10);
+    if (!localStorage.getItem('rvs_commission_rates')) saveJSON('rvs_commission_rates', {});
     if (!localStorage.getItem('rvs_partners')) saveJSON('rvs_partners', []);
 
     if (!localStorage.getItem('rvs_cleanup_v2')) {
         saveJSON('rvs_history', []);
         localStorage.setItem('rvs_cleanup_v2', '1');
+    }
+    if (!localStorage.getItem('rvs_poste_migration')) {
+        const users = loadJSON('rvs_users', DEFAULT_USERS);
+        users.forEach(u => { if (!u.poste) u.poste = (u.user === 'A.Oliveira') ? 'Patron' : 'Non assigné'; });
+        saveJSON('rvs_users', users);
+        localStorage.setItem('rvs_poste_migration', '1');
     }
 }
 
@@ -1230,64 +1227,64 @@ function loadHistory() {
 /* =========================================
    SALAIRES (calcul sur les ventes encaissées par employé)
    ========================================= */
-let salaryPeriod = 'week';
-
 function parseHistDate(str) {
     const m = String(str).match(/(\d{2})\/(\d{2})\/(\d{4})/);
     if (!m) return null;
     return new Date(+m[3], +m[2] - 1, +m[1]);
 }
 
-function setSalaryPeriod(period, chip) {
-    salaryPeriod = period;
-    document.querySelectorAll('#salaryPeriodChips .cat-chip').forEach(c => c.classList.remove('active'));
-    if (chip) chip.classList.add('active');
-    renderSalaries();
+function getWeekStart(d) {
+    const date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    const day = date.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
+    date.setDate(date.getDate() + diff);
+    return date;
 }
 
-function saveCommissionRate() {
-    const input = document.getElementById('commissionRate');
-    const rate = Math.max(0, parseFloat(input.value) || 0);
-    saveJSON('rvs_commission_rate', rate);
-    notify(`Taux de commission mis à jour : ${rate}%`);
+function saveCommissionRates() {
+    const rates = {};
+    document.querySelectorAll('#posteRates [data-poste]').forEach(input => {
+        rates[input.dataset.poste] = Math.max(0, parseFloat(input.value) || 0);
+    });
+    saveJSON('rvs_commission_rates', rates);
+    notify('Taux de commission enregistrés');
     renderSalaries();
 }
 
 function renderSalaries() {
-    const chipsEl = document.getElementById('salaryPeriodChips');
-    if (!chipsEl.innerHTML) {
-        const periods = [{ id: 'today', label: "Aujourd'hui" }, { id: 'week', label: 'Cette semaine' }, { id: 'all', label: 'Depuis toujours' }];
-        chipsEl.innerHTML = periods.map(p => `<div class="cat-chip${p.id === salaryPeriod ? ' active' : ''}" onclick="setSalaryPeriod('${p.id}', this)">${p.label}</div>`).join('');
-    }
-
-    const rate = loadJSON('rvs_commission_rate', 10);
-    document.getElementById('commissionRate').value = rate;
-
     const users = loadJSON('rvs_users', DEFAULT_USERS);
+    const rates = loadJSON('rvs_commission_rates', {});
+    const postes = [...new Set(users.map(u => u.poste || 'Non assigné'))];
+
+    document.getElementById('posteRates').innerHTML = postes.map(poste => `
+        <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px; display:block;">${poste}</label>
+            <input type="number" class="input-field" data-poste="${poste}" style="width:120px; padding:12px 16px;" min="0" step="0.5" value="${rates[poste] ?? ''}" placeholder="À définir">
+        </div>`).join('');
+
     const hist = loadJSON('rvs_history', []);
-    const now = new Date();
-    const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+    const weekStart = getWeekStart(new Date());
 
     const sales = hist.filter(h => {
         if (h.type !== 'VENTE') return false;
-        if (salaryPeriod === 'all') return true;
         const d = parseHistDate(h.date);
-        if (!d) return false;
-        if (salaryPeriod === 'today') return d.toDateString() === now.toDateString();
-        if (salaryPeriod === 'week') return d >= weekAgo;
-        return true;
+        return d && d >= weekStart;
     });
 
     const tbody = document.getElementById('salaryList');
     if (!users.length) { tbody.innerHTML = `<tr><td style="text-align:center; color:var(--text-muted);">Aucun employé.</td></tr>`; return; }
 
     tbody.innerHTML = users.map(u => {
+        const poste = u.poste || 'Non assigné';
+        const rate = rates[poste] || 0;
         const userSales = sales.filter(h => h.user === u.user);
         const revenue = userSales.reduce((sum, h) => sum + (h.total || 0), 0);
         const salary = revenue * rate / 100;
         return `
             <tr>
                 <td><b>${u.user}</b></td>
+                <td>${poste}</td>
                 <td>${userSales.length}</td>
                 <td>${formatMoney(revenue)}</td>
                 <td style="color:var(--secondary); font-weight:700;">${formatMoney(salary)}</td>
