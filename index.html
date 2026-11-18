@@ -124,6 +124,15 @@ select.input-field option { background-color: #000; color: #fff; }
 }
 .btn-circle:hover { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 0 25px var(--primary-glow); }
 
+.recap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+.recap-card { background: rgba(216,197,163,0.03); border: 1px solid rgba(216,197,163,0.06); border-radius: 14px; padding: 16px; text-align: center; }
+.recap-card .rc-value { font-family: 'Space Grotesk'; font-size: 1.6rem; font-weight: 700; color: var(--secondary); }
+.recap-card .rc-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 4px; }
+
+.btn-row-action { background: rgba(216,197,163,0.06); border: 1px solid rgba(216,197,163,0.12); color: #fff; border-radius: 10px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem; margin-left: 6px; transition: 0.2s; }
+.btn-row-action:hover { background: var(--primary); border-color: var(--primary); }
+.btn-row-action.danger:hover { background: var(--danger); border-color: var(--danger); }
+
 .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
 .modern-table th { text-align: left; padding: 10px 20px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
 .modern-table td { background: rgba(216,197,163,0.02); padding: 20px; vertical-align: middle; border-top: 1px solid rgba(216,197,163,0.02); transition: background 0.2s; }
@@ -421,6 +430,8 @@ select.input-field option { background-color: #000; color: #fff; }
             <div class="nav-item" onclick="switchTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Carburant</span></div>
             <div class="nav-item" onclick="switchTab('history', this)"><i class="fas fa-book"></i> <span>Historique</span></div>
             <div class="nav-item" onclick="switchTab('salaries', this)"><i class="fas fa-sack-dollar"></i> <span>Salaires</span></div>
+            <div class="nav-item" onclick="switchTab('accounts', this)"><i class="fas fa-users-gear"></i> <span>Comptes</span></div>
+            <div class="nav-item" id="navMyActions" onclick="switchTab('myactions', this)"><i class="fas fa-user-check"></i> <span>Mes Actions</span></div>
         </div>
 
         <div class="topbar-right">
@@ -616,8 +627,82 @@ select.input-field option { background-color: #000; color: #fff; }
                 </div>
             </div>
         </div>
+
+        <div id="accountsTab" class="tab-content">
+            <div class="glass-panel" style="padding:30px; margin-bottom:30px;">
+                <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-users-gear"></i> Comptes</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Gérer les comptes employés et consulter leur activité. Seuls les comptes Angelo et Ava peuvent modifier le site.</p>
+            </div>
+
+            <div class="glass-panel" style="padding:30px; margin-bottom:30px;">
+                <h3 style="font-family:'Pirata One'; margin-bottom:20px;">Ajouter un employé</h3>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:20px; margin-bottom:20px;">
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:block;">Nom</label>
+                        <input type="text" id="newEmpName" class="input-field" placeholder="Ex: J.Dupont">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:block;">Poste</label>
+                        <input type="text" id="newEmpPoste" class="input-field" placeholder="Ex: Barman">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:block;">Mot de passe</label>
+                        <input type="text" id="newEmpPass" class="input-field" placeholder="Mot de passe">
+                    </div>
+                </div>
+                <button class="btn-action" style="width:auto; padding:0 22px; height:46px;" onclick="addEmployeeAccount()"><i class="fas fa-user-plus"></i> Créer le compte</button>
+            </div>
+
+            <div class="glass-panel" style="padding:30px;">
+                <div style="overflow-x:auto;">
+                    <table class="modern-table">
+                        <thead><tr><th>Nom</th><th>Poste</th><th>Rôle</th><th>Statut</th><th style="text-align:right;">Actions</th></tr></thead>
+                        <tbody id="accountsList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="myactionsTab" class="tab-content">
+            <div class="glass-panel" style="padding:30px; margin-bottom:30px;">
+                <h2 style="font-family:'Pirata One'; margin-bottom:6px;"><i class="fas fa-user-check"></i> Mes Actions</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">Récapitulatif de toutes vos actions enregistrées sur le site.</p>
+                <div id="myActionsStats" class="recap-grid"></div>
+            </div>
+            <div class="glass-panel" style="padding:30px;">
+                <div style="overflow-x:auto;">
+                    <table class="modern-table">
+                        <thead><tr><th>Date</th><th>Type</th><th>Détail</th></tr></thead>
+                        <tbody id="myActionsList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </main>
 
+</div>
+
+<div id="modalAccountActivity" class="modal-overlay">
+    <div class="glass-panel modal-content" style="width:600px; max-height:80vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="activityModalTitle" style="font-family:'Pirata One'; border:none; font-size:1.3rem;">Activité</h2>
+            <i class="fas fa-times" onclick="closeAccountActivity()" style="cursor:pointer; font-size:1.2rem; opacity:0.7;"></i>
+        </div>
+        <div id="activityStats" class="recap-grid" style="margin-bottom:20px;"></div>
+        <table class="modern-table"><tbody id="activityList"></tbody></table>
+    </div>
+</div>
+
+<div id="modalResetPass" class="modal-overlay">
+    <div class="glass-panel modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <h2 style="font-family:'Pirata One'; border:none; font-size:1.4rem;">Nouveau mot de passe</h2>
+            <i class="fas fa-times" onclick="closeResetPass()" style="cursor:pointer; font-size:1.2rem; opacity:0.7;"></i>
+        </div>
+        <p id="resetPassTarget" style="color:var(--text-muted); margin-bottom:20px;"></p>
+        <input type="text" id="newPasswordInput" class="input-field" placeholder="Nouveau mot de passe" style="margin-bottom:30px;">
+        <button class="btn-action" onclick="confirmResetPass()">Enregistrer</button>
+    </div>
 </div>
 
 <div id="modalStock" class="modal-overlay">
@@ -660,7 +745,10 @@ const INGREDIENTS = [
     // En attente de la liste d'articles a fournir
 ];
 
-const DEFAULT_USERS = [ { user: 'A.Oliveira', pass: 'riverside26', status: 'Actif', poste: 'Patron' } ];
+const DEFAULT_USERS = [
+    { user: 'A.Oliveira', pass: 'riverside26', status: 'Actif', poste: 'Patron', role: 'admin' },
+    { user: 'A.Salazar', pass: 'riverside-temp', status: 'Actif', poste: 'Patron', role: 'admin' }
+];
 
 const DEFAULT_PURCHASES = [];
 
@@ -698,6 +786,15 @@ function ensureSeed() {
         users.forEach(u => { if (!u.poste) u.poste = (u.user === 'A.Oliveira') ? 'Patron' : 'Non assigné'; });
         saveJSON('rvs_users', users);
         localStorage.setItem('rvs_poste_migration', '1');
+    }
+    if (!localStorage.getItem('rvs_accounts_v2')) {
+        const users = loadJSON('rvs_users', DEFAULT_USERS);
+        users.forEach(u => { if (!u.role) u.role = (u.user === 'A.Oliveira') ? 'admin' : 'employe'; });
+        if (!users.some(u => u.user === 'A.Salazar')) {
+            users.push({ user: 'A.Salazar', pass: 'riverside-temp', status: 'Actif', poste: 'Patron', role: 'admin' });
+        }
+        saveJSON('rvs_users', users);
+        localStorage.setItem('rvs_accounts_v2', '1');
     }
 }
 
@@ -779,6 +876,9 @@ function initializeDashboard() {
     document.getElementById('sysDate').textContent = new Date().toLocaleDateString('fr-FR');
     document.getElementById('selectProduct').innerHTML = INGREDIENTS.map(i => `<option value="${i.name}">${i.name}</option>`).join('');
 
+    const me = loadJSON('rvs_users', DEFAULT_USERS).find(u => u.user === state.user);
+    state.role = (me && me.role) || 'employe';
+
     state.stocks = loadJSON('rvs_stocks', {});
 
     initDragAndDrop();
@@ -789,6 +889,7 @@ function initializeDashboard() {
     renderTicket();
     renderRecipes();
     renderPartners();
+    applyRolePermissions();
 }
 
 /* =========================================
@@ -830,6 +931,14 @@ function submitPurchase() {
     items.forEach(it => { state.stocks[it.title] = (state.stocks[it.title] || 0) + it.qty; });
     saveJSON('rvs_stocks', state.stocks);
     renderStockList();
+
+    const hist = loadJSON('rvs_history', []);
+    hist.push({
+        user: state.user, type: 'COMMANDE', date: new Date().toLocaleString('fr-FR'),
+        items: [{ title: company, qty: items.reduce((s, i) => s + i.qty, 0) }],
+        total: amount
+    });
+    saveJSON('rvs_history', hist);
 
     document.getElementById('purchaseCompany').value = '';
     document.getElementById('purchaseAmount').value = '';
@@ -1168,8 +1277,13 @@ function declareFuel() {
     if(!aInput.value || !pendingPhotoName) return notify("Photo et montant requis", "error");
 
     const fuel = loadJSON('rvs_fuel', []);
-    fuel.push({ user: state.user, date: new Date().toLocaleString('fr-FR'), vehicle: v, amount: parseFloat(aInput.value), status: 'EN ATTENTE' });
+    const fuelDate = new Date().toLocaleString('fr-FR');
+    fuel.push({ user: state.user, date: fuelDate, vehicle: v, amount: parseFloat(aInput.value), status: 'EN ATTENTE' });
     saveJSON('rvs_fuel', fuel);
+
+    const hist = loadJSON('rvs_history', []);
+    hist.push({ user: state.user, type: 'CARBURANT', date: fuelDate, items: [{ title: v, qty: 1 }], total: parseFloat(aInput.value) });
+    saveJSON('rvs_history', hist);
 
     aInput.value = ""; pendingPhotoName = null;
     document.getElementById('uploadZone').innerHTML = `<i class="fas fa-cloud-upload-alt"></i><span style="font-size:0.9rem; color:var(--text-muted);">Glissez la preuve ou cliquez</span>
@@ -1197,8 +1311,9 @@ function loadFuelHistory() {
    NAVIGATION & HISTORIQUE
    ========================================= */
 function switchTab(tabId, element) {
+    if (state.role !== 'admin' && tabId !== 'myactions') return;
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
+    if (element) element.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabId + 'Tab').classList.add('active');
     if(tabId === 'orders') renderPurchaseHistory();
@@ -1207,6 +1322,25 @@ function switchTab(tabId, element) {
     if(tabId === 'stocks') renderStockList();
     if(tabId === 'cocktails') renderRecipes();
     if(tabId === 'salaries') renderSalaries();
+    if(tabId === 'accounts') renderAccounts();
+    if(tabId === 'myactions') renderMyActions();
+}
+
+/* =========================================
+   ROLES & PERMISSIONS (admin: Angelo/Ava, employe: lecture seule de leurs actions)
+   ========================================= */
+function applyRolePermissions() {
+    const isAdmin = state.role === 'admin';
+    ['orders', 'invoice', 'cocktails', 'stocks', 'fuel', 'history', 'salaries', 'accounts'].forEach(id => {
+        const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+        if (el) el.style.display = isAdmin ? '' : 'none';
+    });
+    const navMy = document.getElementById('navMyActions');
+    if (navMy) navMy.style.display = isAdmin ? 'none' : '';
+    const partnerBtn = document.querySelector('button[onclick="togglePartners()"]');
+    if (partnerBtn) partnerBtn.style.display = isAdmin ? '' : 'none';
+
+    if (!isAdmin) switchTab('myactions', navMy);
 }
 function loadHistory() {
     const tbody = document.getElementById('hList');
@@ -1290,6 +1424,126 @@ function renderSalaries() {
                 <td style="color:var(--secondary); font-weight:700;">${formatMoney(salary)}</td>
             </tr>`;
     }).join('');
+}
+
+/* =========================================
+   COMPTES & ACTIVITE (admin: Angelo/Ava uniquement)
+   ========================================= */
+function computeUserStats(user) {
+    const hist = loadJSON('rvs_history', []).filter(h => h.user === user);
+    const stats = { ventes: 0, ventesTotal: 0, cocktails: 0, commandes: 0, commandesTotal: 0, carburant: 0, carburantTotal: 0 };
+    hist.forEach(h => {
+        if (h.type === 'VENTE') { stats.ventes++; stats.ventesTotal += h.total || 0; }
+        if (h.type === 'COCKTAIL') stats.cocktails++;
+        if (h.type === 'COMMANDE') { stats.commandes++; stats.commandesTotal += h.total || 0; }
+        if (h.type === 'CARBURANT') { stats.carburant++; stats.carburantTotal += h.total || 0; }
+    });
+    return { hist, stats };
+}
+
+function renderActivity(statsElId, listElId, user) {
+    const { hist, stats } = computeUserStats(user);
+    document.getElementById(statsElId).innerHTML = `
+        <div class="recap-card"><div class="rc-value">${stats.ventes}</div><div class="rc-label">Ventes (${formatMoney(stats.ventesTotal)})</div></div>
+        <div class="recap-card"><div class="rc-value">${stats.cocktails}</div><div class="rc-label">Cocktails préparés</div></div>
+        <div class="recap-card"><div class="rc-value">${stats.commandes}</div><div class="rc-label">Commandes (${formatMoney(stats.commandesTotal)})</div></div>
+        <div class="recap-card"><div class="rc-value">${stats.carburant}</div><div class="rc-label">Notes de frais (${formatMoney(stats.carburantTotal)})</div></div>
+    `;
+    const listEl = document.getElementById(listElId);
+    if (!hist.length) { listEl.innerHTML = `<tr><td style="text-align:center; color:var(--text-muted);">Aucune activité.</td></tr>`; return; }
+    listEl.innerHTML = [...hist].reverse().map(h => `
+        <tr>
+            <td style="color:var(--text-muted);">${h.date}</td>
+            <td><b style="color:var(--secondary); text-transform:uppercase; letter-spacing:1px;">${h.type}</b></td>
+            <td>${h.type === 'VENTE' ? h.items[0].title : `${h.items[0].qty} x ${h.items[0].title}`}${h.total ? ` — ${formatMoney(h.total)}` : ''}</td>
+        </tr>`).join('');
+}
+
+function renderMyActions() { renderActivity('myActionsStats', 'myActionsList', state.user); }
+
+function openAccountActivity(user) {
+    document.getElementById('activityModalTitle').textContent = `Activité — ${user}`;
+    renderActivity('activityStats', 'activityList', user);
+    document.getElementById('modalAccountActivity').classList.add('open');
+}
+function closeAccountActivity() { document.getElementById('modalAccountActivity').classList.remove('open'); }
+
+function renderAccounts() {
+    const users = loadJSON('rvs_users', DEFAULT_USERS);
+    document.getElementById('accountsList').innerHTML = users.map(u => {
+        const isSelf = u.user === state.user;
+        const isAdminRow = u.role === 'admin';
+        return `
+        <tr>
+            <td><b>${u.user}</b>${isSelf ? ' <span style="opacity:.5; font-size:.75rem;">(vous)</span>' : ''}</td>
+            <td>${u.poste || '-'}</td>
+            <td>${isAdminRow ? '<span style="color:var(--secondary); font-weight:700;">Admin</span>' : 'Employé'}</td>
+            <td>${u.status === 'Désactivé' ? `<span style="color:var(--danger);">Désactivé</span>` : `<span style="color:var(--success);">Actif</span>`}</td>
+            <td style="text-align:right; white-space:nowrap;">
+                <button class="btn-row-action" onclick="openAccountActivity('${u.user}')" title="Voir l'activité"><i class="fas fa-chart-simple"></i></button>
+                <button class="btn-row-action" onclick="openResetPass('${u.user}')" title="Réinitialiser le mot de passe"><i class="fas fa-key"></i></button>
+                ${!isSelf ? `<button class="btn-row-action" onclick="toggleAccountStatus('${u.user}')" title="${u.status === 'Désactivé' ? 'Activer' : 'Désactiver'}"><i class="fas fa-power-off"></i></button>` : ''}
+                ${!isSelf && !isAdminRow ? `<button class="btn-row-action danger" onclick="deleteAccount('${u.user}')" title="Supprimer"><i class="fas fa-trash"></i></button>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function addEmployeeAccount() {
+    const name = document.getElementById('newEmpName').value.trim();
+    const poste = document.getElementById('newEmpPoste').value.trim();
+    const pass = document.getElementById('newEmpPass').value.trim();
+    if (!name || !pass) return notify("Nom et mot de passe requis", "error");
+
+    const users = loadJSON('rvs_users', DEFAULT_USERS);
+    if (users.some(u => u.user.toLowerCase() === name.toLowerCase())) return notify("Ce compte existe déjà", "error");
+
+    users.push({ user: name, pass, status: 'Actif', poste: poste || 'Non assigné', role: 'employe' });
+    saveJSON('rvs_users', users);
+
+    document.getElementById('newEmpName').value = '';
+    document.getElementById('newEmpPoste').value = '';
+    document.getElementById('newEmpPass').value = '';
+    renderAccounts();
+    notify(`Compte créé : ${name}`);
+}
+
+function toggleAccountStatus(user) {
+    const users = loadJSON('rvs_users', DEFAULT_USERS);
+    const target = users.find(u => u.user === user);
+    if (!target) return;
+    target.status = target.status === 'Désactivé' ? 'Actif' : 'Désactivé';
+    saveJSON('rvs_users', users);
+    renderAccounts();
+    notify(`${user} : ${target.status}`);
+}
+
+function deleteAccount(user) {
+    const users = loadJSON('rvs_users', DEFAULT_USERS);
+    if (!confirm(`Supprimer le compte ${user} ? Cette action est irréversible.`)) return;
+    saveJSON('rvs_users', users.filter(u => u.user !== user));
+    renderAccounts();
+    notify(`Compte supprimé : ${user}`);
+}
+
+let resetPassTargetUser = null;
+function openResetPass(user) {
+    resetPassTargetUser = user;
+    document.getElementById('resetPassTarget').textContent = `Nouveau mot de passe pour ${user}`;
+    document.getElementById('newPasswordInput').value = '';
+    document.getElementById('modalResetPass').classList.add('open');
+}
+function closeResetPass() { document.getElementById('modalResetPass').classList.remove('open'); }
+function confirmResetPass() {
+    const newPass = document.getElementById('newPasswordInput').value.trim();
+    if (!newPass) return notify("Le mot de passe ne peut pas être vide", "error");
+    const users = loadJSON('rvs_users', DEFAULT_USERS);
+    const target = users.find(u => u.user === resetPassTargetUser);
+    if (!target) return;
+    target.pass = newPass;
+    saveJSON('rvs_users', users);
+    closeResetPass();
+    notify(`Mot de passe mis à jour pour ${resetPassTargetUser}`);
 }
 
 /* =========================================
