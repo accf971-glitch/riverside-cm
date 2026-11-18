@@ -747,7 +747,7 @@ const INGREDIENTS = [
 
 const DEFAULT_USERS = [
     { user: 'A.Oliveira', pass: 'riverside26', status: 'Actif', poste: 'Patron', role: 'admin' },
-    { user: 'A.Salazar', pass: 'riverside-temp', status: 'Actif', poste: 'Patron', role: 'admin' }
+    { user: 'A.Salazar', pass: 'riverside-temp', status: 'Actif', poste: 'Copatronne', role: 'admin' }
 ];
 
 const DEFAULT_PURCHASES = [];
@@ -791,10 +791,17 @@ function ensureSeed() {
         const users = loadJSON('rvs_users', DEFAULT_USERS);
         users.forEach(u => { if (!u.role) u.role = (u.user === 'A.Oliveira') ? 'admin' : 'employe'; });
         if (!users.some(u => u.user === 'A.Salazar')) {
-            users.push({ user: 'A.Salazar', pass: 'riverside-temp', status: 'Actif', poste: 'Patron', role: 'admin' });
+            users.push({ user: 'A.Salazar', pass: 'riverside-temp', status: 'Actif', poste: 'Copatronne', role: 'admin' });
         }
         saveJSON('rvs_users', users);
         localStorage.setItem('rvs_accounts_v2', '1');
+    }
+    if (!localStorage.getItem('rvs_poste_fix_v3')) {
+        const users = loadJSON('rvs_users', DEFAULT_USERS);
+        const ava = users.find(u => u.user === 'A.Salazar');
+        if (ava) ava.poste = 'Copatronne';
+        saveJSON('rvs_users', users);
+        localStorage.setItem('rvs_poste_fix_v3', '1');
     }
 }
 
