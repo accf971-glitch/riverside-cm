@@ -339,6 +339,15 @@ select.input-field option { background-color: #000; color: #fff; }
 .btn-close-widget { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
 .widget-content { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 .widget-card { background: rgba(216,197,163,0.03); border: 1px solid rgba(216,197,163,0.06); border-radius: 16px; padding: 20px; }
+.partner-list { display: flex; flex-direction: column; gap: 14px; }
+.partner-card { background: rgba(216,197,163,0.03); border: 1px solid rgba(216,197,163,0.06); border-radius: 14px; padding: 16px; position: relative; }
+.partner-card .pc-name { font-family: 'Pirata One'; font-size: 1.05rem; color: #fff; margin-bottom: 4px; padding-right: 24px; }
+.partner-card .pc-cat { display: inline-block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary); border: 1px solid rgba(201,162,39,0.3); border-radius: 20px; padding: 2px 10px; margin-bottom: 8px; }
+.partner-card .pc-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 6px; }
+.partner-card .pc-contact { font-size: 0.8rem; color: var(--text-main); }
+.partner-card .pc-remove { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--danger); opacity: 0.6; cursor: pointer; font-size: 0.9rem; }
+.partner-card .pc-remove:hover { opacity: 1; }
+.partner-empty { text-align: center; color: var(--text-muted); padding: 30px 10px; font-size: 0.9rem; }
 .widget-title { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
 .clock-display { font-size: 2.5rem; font-family: 'Space Grotesk'; font-weight: 700; text-align: center; }
 .date-display { text-align: center; color: var(--primary); font-weight: 600; }
@@ -415,6 +424,7 @@ select.input-field option { background-color: #000; color: #fff; }
         </div>
 
         <div class="topbar-right">
+            <button onclick="togglePartners()" class="btn-tools" title="Partenariats" style="font-size:1.2rem;">🚤</button>
             <div class="topbar-pill">
                 <span class="tp-label">Opérateur</span>
                 <span class="tp-value" id="opName">-</span>
@@ -453,6 +463,18 @@ select.input-field option { background-color: #000; color: #fff; }
                 <div class="widget-title"><i class="fas fa-sticky-note"></i> Mémo <small id="saveStatus" style="float:right; opacity:0.5; font-size:0.7rem;">Sauvegardé</small></div>
                 <textarea id="quickNote" class="notepad-area" placeholder="Notes temporaires..." oninput="saveNote()"></textarea>
             </div>
+        </div>
+    </div>
+
+    <div id="partnersPanel" class="widget-drawer">
+        <div class="widget-header">
+            <h3>🚤 Partenariats</h3>
+            <button onclick="togglePartners()" class="btn-close-widget"><i class="fas fa-times"></i></button>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.85rem; margin-top:-10px; margin-bottom:20px;">Accords et partenariats avec d'autres entreprises.</p>
+        <div class="widget-content">
+            <div id="partnerList" class="partner-list"></div>
+            <button type="button" class="btn-add-row" onclick="openPartnerModal()"><i class="fas fa-plus"></i> Ajouter un partenaire</button>
         </div>
     </div>
 
@@ -621,6 +643,24 @@ select.input-field option { background-color: #000; color: #fff; }
     </div>
 </div>
 
+<div id="modalPartner" class="modal-overlay">
+    <div class="glass-panel modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <h2 style="font-family:'Pirata One'; border:none; font-size:1.4rem;">🚤 Nouveau Partenaire</h2>
+            <i class="fas fa-times" onclick="closePartnerModal()" style="cursor:pointer; font-size:1.2rem; opacity:0.7;"></i>
+        </div>
+        <label style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.9rem;">Nom de l'entreprise</label>
+        <input type="text" id="partnerName" class="input-field" placeholder="Ex: Vanilla Unicorn" style="margin-bottom:20px;">
+        <label style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.9rem;">Type de partenariat</label>
+        <input type="text" id="partnerCategory" class="input-field" placeholder="Ex: Fournisseur, Évènementiel..." style="margin-bottom:20px;">
+        <label style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.9rem;">Détails de l'accord</label>
+        <textarea id="partnerDesc" class="input-field" rows="3" placeholder="Ex: -10% sur les commandes groupées..." style="margin-bottom:20px; resize:vertical; font-family:inherit;"></textarea>
+        <label style="display:block; margin-bottom:10px; color:var(--text-muted); font-size:0.9rem;">Contact</label>
+        <input type="text" id="partnerContact" class="input-field" placeholder="Ex: Tony - 555-0192" style="margin-bottom:30px;">
+        <button class="btn-action" onclick="addPartner()">Enregistrer le partenaire</button>
+    </div>
+</div>
+
 <script>
 /* =========================================
    CONFIGURATION & DONNEES - RIVERSIDE
@@ -656,6 +696,7 @@ function ensureSeed() {
     if (!localStorage.getItem('rvs_history')) saveJSON('rvs_history', []);
     if (!localStorage.getItem('rvs_fuel')) saveJSON('rvs_fuel', []);
     if (localStorage.getItem('rvs_commission_rate') === null) saveJSON('rvs_commission_rate', 10);
+    if (!localStorage.getItem('rvs_partners')) saveJSON('rvs_partners', []);
 
     if (!localStorage.getItem('rvs_cleanup_v2')) {
         saveJSON('rvs_history', []);
@@ -750,6 +791,7 @@ function initializeDashboard() {
     renderMenuCatalog();
     renderTicket();
     renderRecipes();
+    renderPartners();
 }
 
 /* =========================================
@@ -1251,6 +1293,58 @@ function renderSalaries() {
                 <td style="color:var(--secondary); font-weight:700;">${formatMoney(salary)}</td>
             </tr>`;
     }).join('');
+}
+
+/* =========================================
+   PARTENARIATS (accords avec d'autres entreprises)
+   ========================================= */
+function togglePartners() { document.getElementById('partnersPanel').classList.toggle('open'); }
+
+function renderPartners() {
+    const partners = loadJSON('rvs_partners', []);
+    const list = document.getElementById('partnerList');
+    if (!partners.length) {
+        list.innerHTML = `<div class="partner-empty">Aucun partenariat pour l'instant.</div>`;
+        return;
+    }
+    list.innerHTML = partners.map((p, idx) => `
+        <div class="partner-card">
+            <button class="pc-remove" onclick="removePartner(${idx})" title="Supprimer"><i class="fas fa-trash"></i></button>
+            <div class="pc-name">${p.name}</div>
+            ${p.category ? `<div class="pc-cat">${p.category}</div>` : ''}
+            ${p.desc ? `<div class="pc-desc">${p.desc}</div>` : ''}
+            ${p.contact ? `<div class="pc-contact"><i class="fas fa-user" style="margin-right:6px; opacity:0.6;"></i>${p.contact}</div>` : ''}
+        </div>`).join('');
+}
+
+function openPartnerModal() {
+    document.getElementById('modalPartner').classList.add('open');
+    ['partnerName', 'partnerCategory', 'partnerDesc', 'partnerContact'].forEach(id => document.getElementById(id).value = '');
+}
+function closePartnerModal() { document.getElementById('modalPartner').classList.remove('open'); }
+
+function addPartner() {
+    const name = document.getElementById('partnerName').value.trim();
+    if (!name) return notify("Le nom de l'entreprise est requis", "error");
+
+    const partners = loadJSON('rvs_partners', []);
+    partners.push({
+        name,
+        category: document.getElementById('partnerCategory').value.trim(),
+        desc: document.getElementById('partnerDesc').value.trim(),
+        contact: document.getElementById('partnerContact').value.trim()
+    });
+    saveJSON('rvs_partners', partners);
+    closePartnerModal();
+    renderPartners();
+    notify(`Partenariat ajouté : ${name}`);
+}
+
+function removePartner(idx) {
+    const partners = loadJSON('rvs_partners', []);
+    partners.splice(idx, 1);
+    saveJSON('rvs_partners', partners);
+    renderPartners();
 }
 
 /* =========================================
